@@ -81,7 +81,10 @@ class SigmoidFocalLoss(nn.Module):
         term2 = p ** gamma * torch.log(1 - p)
 
         # print(term1.sum(), term2.sum())
-
+        print(t)
+        print(class_ids)
+        print(t.shape)
+        print(class_ids.shape)
         loss = (
             -(t == class_ids).float() * alpha * term1
             - ((t != class_ids) * (t >= 0)).float() * (1 - alpha) * term2
