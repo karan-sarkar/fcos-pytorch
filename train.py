@@ -196,7 +196,7 @@ if __name__ == '__main__':
     args = get_args()
 
     n_gpu = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
-    args.distributed = True
+    args.distributed = False
 
     if args.distributed:
         torch.cuda.set_device(args.local_rank)
@@ -232,33 +232,30 @@ if __name__ == '__main__':
             output_device=args.local_rank,
             broadcast_buffers=False,
         )
+    model = nn.DataParallel(model)
 
     source_loader = DataLoader(
         source_set,
         batch_size=args.batch,
-        sampler=data_sampler(source_set, shuffle=True, distributed=args.distributed),
-        num_workers=2,
+        shuffle = True,
         collate_fn=collate_fn(args),
     )
     target_loader = DataLoader(
         target_set,
         batch_size=args.batch,
-        sampler=data_sampler(target_set, shuffle=False, distributed=args.distributed),
-        num_workers=2,
+        shuffle = True,
         collate_fn=collate_fn(args),
     )
     source_valid_loader = DataLoader(
         source_valid_set,
         batch_size=args.batch,
-        sampler=data_sampler(source_valid_set, shuffle=True, distributed=args.distributed),
-        num_workers=2,
+        shuffle = True,
         collate_fn=collate_fn(args),
     )
     target_valid_loader = DataLoader(
         target_valid_set,
         batch_size=args.batch,
-        sampler=data_sampler(target_valid_set, shuffle=False, distributed=args.distributed),
-        num_workers=2,
+        shuffle = True,
         collate_fn=collate_fn(args),
     )
     
