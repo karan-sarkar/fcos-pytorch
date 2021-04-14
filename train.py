@@ -209,7 +209,7 @@ if __name__ == '__main__':
 
     backbone = vovnet57(pretrained=False)
     model = FCOS(args, backbone)
-    model = model.to(device)
+    model = nn.DataParallel(model.to(device))
 
     optimizer = optim.SGD(
         model.parameters(),
