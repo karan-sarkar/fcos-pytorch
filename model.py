@@ -190,7 +190,7 @@ class FCOS(nn.Module):
         )
 
         self.fpn_strides = config.fpn_strides
-        print(self.parameters())
+        print([n for n,_ in self.named_parameters()])
 
     def train(self, mode=True):
         super().train(mode)
@@ -203,8 +203,8 @@ class FCOS(nn.Module):
 
     def forward(self, input, image_sizes=None, targets=None):
         features = self.backbone(input)
-        features1 = self.fpn(features)
-        features2 = self.fpn(features)
+        features1 = self.fpn1(features)
+        features2 = self.fpn2(features)
         cls_pred1, box_pred1, center_pred1 = self.head1(features1)
         cls_pred2, box_pred2, center_pred2 = self.head2(features2)
         print(cls_pred1.shape)
