@@ -78,7 +78,7 @@ def flatten(cls_pred):
     n_class = cls_pred[0].shape[1]
 
     cls_flat = []
-    for i in range(len(labels)):
+    for i in range(len(cls_pred)):
         cls_flat.append(cls_pred[i].permute(0, 2, 3, 1).reshape(-1, n_class))
 
     cls_flat = torch.cat(cls_flat, 0)
