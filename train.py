@@ -73,6 +73,16 @@ def valid(args, epoch, loader, dataset, model, device):
 
     evaluate(dataset, preds)
 
+def flatten(cls_pred):
+    batch = cls_pred[0].shape[0]
+    n_class = cls_pred[0].shape[1]
+
+    cls_flat = []
+    for i in range(len(labels)):
+        cls_flat.append(cls_pred[i].permute(0, 2, 3, 1).reshape(-1, n_class))
+
+    cls_flat = torch.cat(cls_flat, 0)
+    return cls_flat
 
 def train(args, epoch, loader, model, optimizer, device):
     model.train()
@@ -89,7 +99,8 @@ def train(args, epoch, loader, model, optimizer, device):
         images = images.to(device)
         targets = [target.to(device) for target in targets]
 
-        loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
+        loss_dict2, loss_dict, cls_pred, _ = model(images.tensors, targets=targets)
+        print(flatten(cls_pred).shape)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
