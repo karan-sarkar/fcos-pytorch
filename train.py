@@ -83,11 +83,34 @@ def flatten(cls_pred):
 
     cls_flat = torch.cat(cls_flat, 0)
     return cls_flat
+    
+def compare(self, out, t):
+    n_class = out.shape[1]
+    class_ids = torch.arange(
+        1, n_class + 1, dtype=target.dtype, device=target.device
+    ).unsqueeze(0)
+    
+    p = torch.sigmoid(out)
+
+    gamma = self.gamma
+    alpha = self.alpha
+
+    term1 = (1 - p) ** gamma * torch.log(p)
+    term2 = p ** gamma * torch.log(1 - p)
+
+    # print(term1.sum(), term2.sum())
+
+    loss = (
+        -(t == class_ids).float() * alpha * term1
+        - ((t != class_ids) * (t >= 0)).float() * (1 - alpha) * term2
+    )
+
+    return loss.sum()
 
 def discrep(cls_pred1, cls_pred2):
-    cls_flat1 = torch.sigmoid(flatten(cls_pred1))
-    cls_flat2 = torch.sigmoid(flatten(cls_pred2))
-    return torch.abs(cls_flat1 - cls_flat2).mean()
+    cls_flat1 = flatten(cls_pred1)
+    cls_flat2 = flatten(cls_pred2)
+    return compare(cls_flat1, cls_flat2.argmax(-1)) + compare(cls_flat2, cls_flat1.argmax(-1))
 
 def train(args, epoch, loader, target_loader, model, optimizer, device):
     model.train()
