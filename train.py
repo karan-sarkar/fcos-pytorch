@@ -89,7 +89,7 @@ def discrep(cls_pred1, cls_pred2):
     cls_flat2 = torch.softmax(flatten(cls_pred2), 1)
     return torch.abs(cls_flat1 - cls_flat2).mean()
 
-def train(args, epoch, loader, model, optimizer, device):
+def train(args, epoch, loader, target_loader, model, optimizer, device):
     model.train()
 
     if get_rank() == 0:
@@ -98,13 +98,16 @@ def train(args, epoch, loader, model, optimizer, device):
     else:
         pbar = loader
     
-    for images, targets, _ in pbar:
+    for (images, targets, _), (target_images, target_targets, _) in zip(pbar, target_loader):
         model.zero_grad()
         
         # Train Bottom + Top
         
         images = images.to(device)
         targets = [target.to(device) for target in targets]
+        
+        target_images = target_images.to(device)
+        target_targets = [target.to(device) for target in target_targets]
 
         loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
         loss_cls = loss_dict['loss_cls'].mean()
@@ -122,7 +125,8 @@ def train(args, epoch, loader, model, optimizer, device):
         
         # Train Top
         model.freeze("bottom", False)
-        loss_dict2, loss_dict, p1, p2 = model(images.tensors, targets=targets)
+        loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
+        _, _, p1, p2 = model(target_images.tensors, target_targets=targets)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -134,14 +138,15 @@ def train(args, epoch, loader, model, optimizer, device):
 
         loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 - dloss
         loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), 10)
+        nn.utils.clip_grad_norm_(model.parameters(), 3)
         optimizer.step()
         model.freeze("bottom", True)
         
         # Train Bottom
         model.freeze("top", False)
         for _ in range(4):
-            loss_dict2, loss_dict, p1, p2 = model(images.tensors, targets=targets)
+            loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
+            _, _, p1, p2 = model(target_images.tensors, target_targets=targets)
             loss_cls = loss_dict['loss_cls'].mean()
             loss_box = loss_dict['loss_box'].mean()
             loss_center = loss_dict['loss_center'].mean()
@@ -153,7 +158,7 @@ def train(args, epoch, loader, model, optimizer, device):
 
             loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 + dloss
             loss.backward()
-            nn.utils.clip_grad_norm_(model.parameters(), 10)
+            nn.utils.clip_grad_norm_(model.parameters(), 3)
         optimizer.step()
         model.freeze("top", True)
         
@@ -197,8 +202,10 @@ if __name__ == '__main__':
 
     device = 'cuda'
 
-    train_set = COCODataset(args.path, 'train', preset_transform(args, train=True))
-    valid_set = COCODataset(args.path, 'val', preset_transform(args, train=False))
+    source_set = COCODataset(args.path, 'train', preset_transform(args, train=True))
+    target_set = COCODataset(args.path2, 'train', preset_transform(args, train=True))
+    source_valid_set = COCODataset(args.path2, 'val', preset_transform(args, train=False))
+    target_valid_set = COCODataset(args.path2, 'val', preset_transform(args, train=False))
 
     backbone = vovnet57(pretrained=False)
     model = FCOS(args, backbone)
@@ -223,24 +230,40 @@ if __name__ == '__main__':
             broadcast_buffers=False,
         )
 
-    train_loader = DataLoader(
-        train_set,
+    source_loader = DataLoader(
+        source_set,
         batch_size=args.batch,
         sampler=data_sampler(train_set, shuffle=True, distributed=args.distributed),
         num_workers=2,
         collate_fn=collate_fn(args),
     )
-    valid_loader = DataLoader(
-        valid_set,
+    target_loader = DataLoader(
+        target_set,
         batch_size=args.batch,
         sampler=data_sampler(valid_set, shuffle=False, distributed=args.distributed),
         num_workers=2,
         collate_fn=collate_fn(args),
     )
-
+    source_valid_loader = DataLoader(
+        source_valid_set,
+        batch_size=args.batch,
+        sampler=data_sampler(train_set, shuffle=True, distributed=args.distributed),
+        num_workers=2,
+        collate_fn=collate_fn(args),
+    )
+    target_valid_loader = DataLoader(
+        target_valid_set,
+        batch_size=args.batch,
+        sampler=data_sampler(valid_set, shuffle=False, distributed=args.distributed),
+        num_workers=2,
+        collate_fn=collate_fn(args),
+    )
+    
+    
     for epoch in range(args.epoch):
-        train(args, epoch, train_loader, model, optimizer, device)
-        valid(args, epoch, valid_loader, valid_set, model, device)
+        train(args, epoch, source_loader, target_loader, model, optimizer, device)
+        valid(args, epoch, source_valid_loader, source_valid_set, model, device)
+        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
 
         scheduler.step()
 
