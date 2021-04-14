@@ -84,7 +84,7 @@ def flatten(cls_pred):
     cls_flat = torch.cat(cls_flat, 0)
     return cls_flat
     
-def compare(out, t):
+def compare(out, t, args):
     n_class = out.shape[1]
     class_ids = torch.arange(
         1, n_class + 1, dtype=t.dtype, device=t.device
@@ -92,8 +92,8 @@ def compare(out, t):
     
     p = torch.sigmoid(out)
 
-    gamma = self.gamma
-    alpha = self.alpha
+    gamma = args.gamma
+    alpha = args.alpha
 
     term1 = (1 - p) ** gamma * torch.log(p)
     term2 = p ** gamma * torch.log(1 - p)
@@ -107,10 +107,10 @@ def compare(out, t):
 
     return loss.sum()
 
-def discrep(cls_pred1, cls_pred2):
+def discrep(cls_pred1, cls_pred2, args):
     cls_flat1 = flatten(cls_pred1)
     cls_flat2 = flatten(cls_pred2)
-    return compare(cls_flat1, cls_flat2.argmax(-1)) + compare(cls_flat2, cls_flat1.argmax(-1))
+    return compare(cls_flat1, cls_flat2.argmax(-1), args) + compare(cls_flat2, cls_flat1.argmax(-1), args)
 
 def train(args, epoch, loader, target_loader, model, optimizer, device):
     model.train()
@@ -157,7 +157,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         loss_cls2 = loss_dict2['loss_cls'].mean()
         loss_box2 = loss_dict2['loss_box'].mean()
         loss_center2 = loss_dict2['loss_center'].mean()
-        dloss = discrep(p1, p2)
+        dloss = discrep(p1, p2, args)
 
         loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 - dloss
         loss.backward()
@@ -177,7 +177,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
             loss_cls2 = loss_dict2['loss_cls'].mean()
             loss_box2 = loss_dict2['loss_box'].mean()
             loss_center2 = loss_dict2['loss_center'].mean()
-            dloss = discrep(p1, p2)
+            dloss = discrep(p1, p2, args)
 
             loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 + dloss
             loss.backward()
