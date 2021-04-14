@@ -84,7 +84,7 @@ def flatten(cls_pred):
     cls_flat = torch.cat(cls_flat, 0)
     return cls_flat
     
-def compare(self, out, t):
+def compare(out, t):
     n_class = out.shape[1]
     class_ids = torch.arange(
         1, n_class + 1, dtype=target.dtype, device=target.device
