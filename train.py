@@ -86,9 +86,8 @@ def flatten(cls_pred):
     
 
 def discrep(cls_pred1, cls_pred2):
-    cls_flat1 = flatten(cls_pred1)
-    cls_flat2 = flatten(cls_pred2)
-    print(cls_flat1)
+    cls_flat1 = torch.sigmoid(flatten(cls_pred1))
+    cls_flat2 = torch.sigmoid(flatten(cls_pred2))
     return torch.abs(cls_flat1 - cls_flat2).mean()
 
 def train(args, epoch, loader, target_loader, model, optimizer, device):
