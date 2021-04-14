@@ -200,7 +200,7 @@ class MyDataParallel(nn.DataParallel):
 
     def __init__(self, module):
         # Disable all the other parameters
-        super(DataParallel, self).__init__(module)
+        super(MyDataParallel, self).__init__(module)
 
 
     def forward(self, *inputs, **kwargs):
