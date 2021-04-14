@@ -126,7 +126,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         # Train Top
         model.freeze("bottom", False)
         loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
-        _, _, p1, p2 = model(target_images.tensors, target_targets)
+        _, _, p1, p2 = model(target_images.tensors, targets=target_targets)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -146,7 +146,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         model.freeze("top", False)
         for _ in range(4):
             loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
-            _, _, p1, p2 = model(target_images.tensors, target_targets)
+            _, _, p1, p2 = model(target_images.tensors, targets=target_targets)
             loss_cls = loss_dict['loss_cls'].mean()
             loss_box = loss_dict['loss_box'].mean()
             loss_center = loss_dict['loss_center'].mean()
