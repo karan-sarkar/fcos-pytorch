@@ -233,28 +233,28 @@ if __name__ == '__main__':
     source_loader = DataLoader(
         source_set,
         batch_size=args.batch,
-        sampler=data_sampler(train_set, shuffle=True, distributed=args.distributed),
+        sampler=data_sampler(source_set, shuffle=True, distributed=args.distributed),
         num_workers=2,
         collate_fn=collate_fn(args),
     )
     target_loader = DataLoader(
         target_set,
         batch_size=args.batch,
-        sampler=data_sampler(valid_set, shuffle=False, distributed=args.distributed),
+        sampler=data_sampler(target_set, shuffle=False, distributed=args.distributed),
         num_workers=2,
         collate_fn=collate_fn(args),
     )
     source_valid_loader = DataLoader(
         source_valid_set,
         batch_size=args.batch,
-        sampler=data_sampler(train_set, shuffle=True, distributed=args.distributed),
+        sampler=data_sampler(source_valid_set, shuffle=True, distributed=args.distributed),
         num_workers=2,
         collate_fn=collate_fn(args),
     )
     target_valid_loader = DataLoader(
         target_valid_set,
         batch_size=args.batch,
-        sampler=data_sampler(valid_set, shuffle=False, distributed=args.distributed),
+        sampler=data_sampler(target_valid_set, shuffle=False, distributed=args.distributed),
         num_workers=2,
         collate_fn=collate_fn(args),
     )
