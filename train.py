@@ -84,6 +84,11 @@ def flatten(cls_pred):
     cls_flat = torch.cat(cls_flat, 0)
     return cls_flat
 
+def discrep(cls_pred1, cls_pred2):
+    cls_flat1 = torch.softmax(flatten(cls_pred1), 1)
+    cls_flat2 = torch.softmax(flatten(cls_pred2), 1)
+    return torch.abs(cls_flat1 - cls_flat2).mean()
+
 def train(args, epoch, loader, model, optimizer, device):
     model.train()
 
@@ -92,15 +97,16 @@ def train(args, epoch, loader, model, optimizer, device):
 
     else:
         pbar = loader
-
+    
     for images, targets, _ in pbar:
         model.zero_grad()
-
+        
+        # Train Bottom + Top
+        
         images = images.to(device)
         targets = [target.to(device) for target in targets]
 
-        loss_dict2, loss_dict, cls_pred, _ = model(images.tensors, targets=targets)
-        print(flatten(cls_pred).shape)
+        loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -113,17 +119,56 @@ def train(args, epoch, loader, model, optimizer, device):
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer.step()
+        
+        # Train Top
+        model.freeze("bottom", False)
+        loss_dict2, loss_dict, p1, p2 = model(images.tensors, targets=targets)
+        loss_cls = loss_dict['loss_cls'].mean()
+        loss_box = loss_dict['loss_box'].mean()
+        loss_center = loss_dict['loss_center'].mean()
+        
+        loss_cls2 = loss_dict2['loss_cls'].mean()
+        loss_box2 = loss_dict2['loss_box'].mean()
+        loss_center2 = loss_dict2['loss_center'].mean()
+        dloss = discrep(p1, p2)
 
+        loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 - dloss
+        loss.backward()
+        nn.utils.clip_grad_norm_(model.parameters(), 10)
+        optimizer.step()
+        model.freeze("bottom", True)
+        
+        # Train Bottom
+        model.freeze("top", False)
+        for _ in range(4):
+            loss_dict2, loss_dict, p1, p2 = model(images.tensors, targets=targets)
+            loss_cls = loss_dict['loss_cls'].mean()
+            loss_box = loss_dict['loss_box'].mean()
+            loss_center = loss_dict['loss_center'].mean()
+            
+            loss_cls2 = loss_dict2['loss_cls'].mean()
+            loss_box2 = loss_dict2['loss_box'].mean()
+            loss_center2 = loss_dict2['loss_center'].mean()
+            dloss = discrep(p1, p2)
+
+            loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 + dloss
+            loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), 10)
+        optimizer.step()
+        model.freeze("top", True)
+        
         loss_reduced = reduce_loss_dict(loss_dict)
         loss_cls = loss_reduced['loss_cls'].mean().item()
         loss_box = loss_reduced['loss_box'].mean().item()
         loss_center = loss_reduced['loss_center'].mean().item()
+        discrep_loss = dloss.item()
 
         if get_rank() == 0:
             pbar.set_description(
                 (
                     f'epoch: {epoch + 1}; cls: {loss_cls:.4f}; '
                     f'box: {loss_box:.4f}; center: {loss_center:.4f}'
+                    f'discrepancy: {discrep_loss:.4f}'
                 )
             )
 
