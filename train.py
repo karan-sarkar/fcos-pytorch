@@ -89,12 +89,16 @@ def train(args, epoch, loader, model, optimizer, device):
         images = images.to(device)
         targets = [target.to(device) for target in targets]
 
-        _, loss_dict = model(images.tensors, targets=targets)
+        loss_dict2, loss_dict = model(images.tensors, targets=targets)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
+        
+        loss_cls2 = loss_dict2['loss_cls'].mean()
+        loss_box2 = loss_dict2['loss_box'].mean()
+        loss_center2 = loss_dict2['loss_center'].mean()
 
-        loss = loss_cls + loss_box + loss_center
+        loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer.step()

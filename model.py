@@ -163,8 +163,12 @@ class FCOS(nn.Module):
         fpn_top = FPNTopP6P7(
             config.feat_channels[-1], config.out_channel, use_p5=config.use_p5
         )
-        self.fpn = FPN(config.feat_channels, config.out_channel, fpn_top)
-        self.head = FCOSHead(
+        self.fpn1 = FPN(config.feat_channels, config.out_channel, fpn_top)
+        self.fpn2 = FPN(config.feat_channels, config.out_channel, fpn_top)
+        self.head1 = FCOSHead(
+            config.out_channel, config.n_class, config.n_conv, config.prior
+        )
+        self.head2 = FCOSHead(
             config.out_channel, config.n_class, config.n_conv, config.prior
         )
         self.postprocessor = FCOSPostprocessor(
@@ -186,6 +190,7 @@ class FCOS(nn.Module):
         )
 
         self.fpn_strides = config.fpn_strides
+        print(self.parameters())
 
     def train(self, mode=True):
         super().train(mode)
@@ -198,29 +203,47 @@ class FCOS(nn.Module):
 
     def forward(self, input, image_sizes=None, targets=None):
         features = self.backbone(input)
-        features = self.fpn(features)
-        cls_pred, box_pred, center_pred = self.head(features)
+        features1 = self.fpn(features)
+        features2 = self.fpn(features)
+        cls_pred1, box_pred1, center_pred1 = self.head1(features1)
+        cls_pred2, box_pred2, center_pred2 = self.head2(features2)
+        print(cls_pred1.shape)
         # print(cls_pred, box_pred, center_pred)
-        location = self.compute_location(features)
+        location1 = self.compute_location(features1)
+        location2 = self.compute_location(features2)
 
         if self.training:
             loss_cls, loss_box, loss_center = self.loss(
-                location, cls_pred, box_pred, center_pred, targets
+                location1, cls_pred1, box_pred1, center_pred1, targets
             )
-            losses = {
+            losses1 = {
+                'loss_cls': loss_cls,
+                'loss_box': loss_box,
+                'loss_center': loss_center,
+            }
+            loss_cls, loss_box, loss_center = self.loss(
+                location2, cls_pred2, box_pred2, center_pred2, targets
+            )
+            losses2 = {
                 'loss_cls': loss_cls,
                 'loss_box': loss_box,
                 'loss_center': loss_center,
             }
 
-            return None, losses
+            return losses1, losses2
 
         else:
-            boxes = self.postprocessor(
-                location, cls_pred, box_pred, center_pred, image_sizes
+            boxes1 = self.postprocessor(
+                location1, cls_pred1, box_pred1, center_pred1, image_sizes
             )
+            
+            boxes2 = self.postprocessor(
+                location2, cls_pred2, box_pred2, center_pred2, image_sizes
+            )
+            
 
-            return boxes, None
+            return boxes1, boxes2
+    
 
     def compute_location(self, features):
         locations = []
