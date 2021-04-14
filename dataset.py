@@ -22,8 +22,8 @@ def has_valid_annotation(annot):
 
 class COCODataset(datasets.CocoDetection):
     def __init__(self, path, split, transform=None):
-        root = os.path.join(path, f'{split}2017')
-        annot = os.path.join(path, 'annotations', f'instances_{split}2017.json')
+        root = os.path.join("bdd100k/images/100k/", split)
+        annot = path + "_bdd100k_labels_images_det_coco_" + split + ".json"
 
         super().__init__(root, annot)
 
