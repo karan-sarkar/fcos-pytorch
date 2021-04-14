@@ -140,7 +140,7 @@ if __name__ == '__main__':
     train_set = COCODataset(args.path, 'train', preset_transform(args, train=True))
     valid_set = COCODataset(args.path, 'val', preset_transform(args, train=False))
 
-    backbone = vovnet57(pretrained=True)
+    backbone = vovnet57(pretrained=False)
     model = FCOS(args, backbone)
     model = model.to(device)
 
