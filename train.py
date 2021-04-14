@@ -106,7 +106,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         
         images = images.to(device)
         targets = [target.to(device) for target in targets]
-        print(len(targets), images.shape)
+        print(len(targets), images.tensors.shape)
         
         target_images = target_images.to(device)
         target_targets = [target.to(device) for target in target_targets]
