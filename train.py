@@ -87,7 +87,7 @@ def flatten(cls_pred):
 def compare(out, t):
     n_class = out.shape[1]
     class_ids = torch.arange(
-        1, n_class + 1, dtype=target.dtype, device=target.device
+        1, n_class + 1, dtype=t.dtype, device=t.device
     ).unsqueeze(0)
     
     p = torch.sigmoid(out)
