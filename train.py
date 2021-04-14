@@ -86,6 +86,7 @@ def flatten(cls_pred):
 
 def discrep(cls_pred1, cls_pred2):
     cls_flat1 = torch.sigmoid(flatten(cls_pred1))
+    print(cls_flat1)
     cls_flat2 = torch.sigmoid(flatten(cls_pred2))
     return torch.abs(cls_flat1 - cls_flat2).mean()
 
@@ -105,9 +106,11 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         
         images = images.to(device)
         targets = [target.to(device) for target in targets]
+        print(len(targets))
         
         target_images = target_images.to(device)
         target_targets = [target.to(device) for target in target_targets]
+        
 
         loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
         loss_cls = loss_dict['loss_cls'].mean()
@@ -193,7 +196,7 @@ if __name__ == '__main__':
     args = get_args()
 
     n_gpu = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
-    args.distributed = n_gpu > 1
+    args.distributed = True
 
     if args.distributed:
         torch.cuda.set_device(args.local_rank)
@@ -209,7 +212,7 @@ if __name__ == '__main__':
 
     backbone = vovnet57(pretrained=False)
     model = FCOS(args, backbone)
-    model = nn.DataParallel(model.to(device))
+    model = model.to(device)
 
     optimizer = optim.SGD(
         model.parameters(),
