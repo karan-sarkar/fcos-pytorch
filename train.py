@@ -262,15 +262,9 @@ if __name__ == '__main__':
     
     
     for epoch in range(args.epoch):
+        torch.save(model, 'mcd_bdd100k_' + str(epoch + 1) + '.pth')
         train(args, epoch, source_loader, target_loader, model, optimizer, device)
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
 
         scheduler.step()
-
-        if get_rank() == 0:
-            torch.save(
-                {'model': model.module.state_dict(), 'optim': optimizer.state_dict()},
-                f'checkpoint/epoch-{epoch + 1}.pt',
-            )
-
