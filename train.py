@@ -145,7 +145,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         
         # Train Bottom
         model.freeze("top", False)
-        for _ in range(4):
+        for _ in range(5):
             loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
             _, _, p1, p2 = model(target_images.tensors, targets=target_targets)
             loss_cls = loss_dict['loss_cls'].mean()
@@ -259,8 +259,8 @@ if __name__ == '__main__':
         num_workers=2,
         collate_fn=collate_fn(args),
     )
-    
-    
+    if args.ckpt != None:
+        model = torch.load('mcd_bdd100k_' + args.ckpt + '.pth')
     for epoch in range(args.epoch):
         torch.save(model, 'mcd_bdd100k_' + str(epoch + 1) + '.pth')
         train(args, epoch, source_loader, target_loader, model, optimizer, device)
