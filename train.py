@@ -88,6 +88,8 @@ def flatten(cls_pred):
 def discrep(cls_pred1, cls_pred2):
     cls_flat1 = torch.sigmoid(flatten(cls_pred1))
     cls_flat2 = torch.sigmoid(flatten(cls_pred2))
+    cls_flat1[cls_flat1 < 0.05] = 0 
+    cls_flat2[cls_flat2 < 0.05] = 0 
     return torch.abs(cls_flat1 - cls_flat2).mean()
 
 def train(args, epoch, loader, target_loader, model, optimizer, device):
@@ -121,7 +123,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
 
         loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2
         loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), 10)
+        nn.utils.clip_grad_norm_(model.parameters(), 3)
         optimizer.step()
         
         # Train Top
@@ -145,7 +147,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         
         # Train Bottom
         model.freeze("top", False)
-        for _ in range(5):
+        for _ in range(4):
             loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
             _, _, p1, p2 = model(target_images.tensors, targets=target_targets)
             loss_cls = loss_dict['loss_cls'].mean()
