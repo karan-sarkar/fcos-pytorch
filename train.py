@@ -100,7 +100,9 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
 
     else:
         pbar = loader
-    
+    i = 0
+    losses = []
+    dlosses = []
     for (images, targets, _), (target_images, target_targets, _) in zip(pbar, target_loader):
         model.zero_grad()
         
@@ -170,13 +172,20 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         loss_box = loss_reduced['loss_box'].mean().item()
         loss_center = loss_reduced['loss_center'].mean().item()
         discrep_loss = dloss.item()
-
+        losses.append(loss_cls)
+        dlosses.append(discrep_loss)
+        avg_loss = sum(losses) / len(losses)
+        avg_dloss = sum(dlosses) / len(dlosses)
+        
+        if i % 100 == 0:
+            torch.save(model, 'mcd_bdd100k_' + str(epoch + 1) + '.pth')
+        i+=1
         if get_rank() == 0:
             pbar.set_description(
                 (
-                    f'epoch: {epoch + 1}; cls: {loss_cls:.4f}; '
-                    f'box: {loss_box:.4f}; center: {loss_center:.4f}'
-                    f'discrepancy: {discrep_loss:.4f}'
+                    f'epoch: {epoch + 1}; cls: {loss_cls:.4f}; avg cls: {avg_loss:.6f}'
+                    f'box: {loss_box:.4f}; center: {loss_center:.4f};'
+                    f'discrepancy: {discrep_loss:.4f}; avg discrep: {avg_dloss:.6f}'
                 )
             )
 
