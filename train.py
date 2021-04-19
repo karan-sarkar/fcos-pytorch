@@ -146,6 +146,12 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         nn.utils.clip_grad_norm_(model.parameters(), 3)
         optimizer.step()
         model.freeze("bottom", True)
+        
+        loss_reduced = reduce_loss_dict(loss_dict)
+        loss_cls = loss_reduced['loss_cls'].mean().item()
+        loss_box = loss_reduced['loss_box'].mean().item()
+        loss_center = loss_reduced['loss_center'].mean().item()
+        discrep_loss = dloss.item()
         del loss, loss_cls, loss_box, loss_center, loss_cls2, loss_box2, loss_center2, loss_dict, p1, p2
         
         # Train Bottom
@@ -171,11 +177,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         
         del images, targets, target_images, target_targets
         
-        loss_reduced = reduce_loss_dict(loss_dict)
-        loss_cls = loss_reduced['loss_cls'].mean().item()
-        loss_box = loss_reduced['loss_box'].mean().item()
-        loss_center = loss_reduced['loss_center'].mean().item()
-        discrep_loss = dloss.item()
+
         losses.append(loss_cls)
         dlosses.append(discrep_loss)
         avg_loss = sum(losses) / len(losses)
