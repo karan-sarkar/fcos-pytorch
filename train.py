@@ -103,7 +103,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
     i = 0
     losses = []
     dlosses = []
-    for (images, targets, _), (target_images, target_targets, _) in zip(pbar, target_loader):
+    for ((images, targets, _), _), (target_images, target_targets, _) in zip(pbar, target_loader):
         model.zero_grad()
         
         # Train Bottom + Top
@@ -273,9 +273,9 @@ if __name__ == '__main__':
     if args.ckpt != None:
         model = torch.load('mcd_bdd100k_' + str(args.ckpt) + '.pth')
     for epoch in range(args.epoch):
-        valid(args, epoch, source_valid_loader, source_valid_set, model, device)
-        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         train(args, epoch, source_loader, target_loader, model, optimizer, device)
         torch.save(model, 'mcd_bdd100k_' + str(epoch + 1 + args.ckpt) + '.pth')
+        valid(args, epoch, source_valid_loader, source_valid_set, model, device)
+        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
 
         scheduler.step()
