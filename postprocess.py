@@ -21,7 +21,7 @@ class FCOSPostprocessor(nn.Module):
         batch, channel, height, width = cls_pred.shape
 
         cls_pred = cls_pred.view(batch, channel, height, width).permute(0, 2, 3, 1)
-        cls_pred = cls_pred.reshape(batch, -1, channel).sigmoid()
+        cls_pred = torch.softmax(cls_pred.reshape(batch, -1, channel), 1)[:, 1:]
 
         box_pred = box_pred.view(batch, 4, height, width).permute(0, 2, 3, 1)
         box_pred = box_pred.reshape(batch, -1, 4)
