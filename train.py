@@ -96,7 +96,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
     model.train()
 
     if get_rank() == 0:
-        pbar = tqdm(loader, dynamic_ncols=True)
+        pbar = tqdm(zip(loader, range(1000)), dynamic_ncols=True)
 
     else:
         pbar = loader
@@ -178,7 +178,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         avg_dloss = sum(dlosses) / len(dlosses)
         
         if i % 100 == 0:
-            torch.save(model, 'mcd_bdd100k_' + str(epoch + 1) + '.pth')
+            torch.save(model, 'mcd_bdd100k_' + str(epoch + 1 + args.ckpt) + '.pth')
         i+=1
         if get_rank() == 0:
             pbar.set_description(
@@ -252,7 +252,7 @@ if __name__ == '__main__':
     target_loader = DataLoader(
         target_set,
         batch_size=args.batch,
-        sampler=data_sampler(target_set, shuffle=False, distributed=args.distributed),
+        sampler=data_sampler(target_set, shuffle=True, distributed=args.distributed),
         num_workers=2,
         collate_fn=collate_fn(args),
     )
@@ -266,16 +266,16 @@ if __name__ == '__main__':
     target_valid_loader = DataLoader(
         target_valid_set,
         batch_size=args.batch,
-        sampler=data_sampler(target_valid_set, shuffle=False, distributed=args.distributed),
+        sampler=data_sampler(target_valid_set, shuffle=True, distributed=args.distributed),
         num_workers=2,
         collate_fn=collate_fn(args),
     )
     if args.ckpt != None:
-        model = torch.load('mcd_bdd100k_' + args.ckpt + '.pth')
+        model = torch.load('mcd_bdd100k_' + str(args.ckpt) + '.pth')
     for epoch in range(args.epoch):
-        torch.save(model, 'mcd_bdd100k_' + str(epoch + 1) + '.pth')
-        train(args, epoch, source_loader, target_loader, model, optimizer, device)
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        train(args, epoch, source_loader, target_loader, model, optimizer, device)
+        torch.save(model, 'mcd_bdd100k_' + str(epoch + 1 + args.ckpt) + '.pth')
 
         scheduler.step()
