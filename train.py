@@ -184,7 +184,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
             pbar.set_description(
                 (
                     f'epoch: {epoch + 1}; cls: {loss_cls:.4f}; avg cls: {avg_loss:.6f}'
-                    f'box: {loss_box:.4f}; center: {loss_center:.4f};'
+                    f'box: {loss_box:.4f}; center: {loss_center:.4f}'
                     f'discrepancy: {discrep_loss:.4f}; avg discrep: {avg_dloss:.6f}'
                 )
             )
