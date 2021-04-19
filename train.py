@@ -148,11 +148,11 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         model.freeze("bottom", True)
         
         loss_reduced = reduce_loss_dict(loss_dict)
-        loss_cls = loss_reduced['loss_cls'].mean().item()
-        loss_box = loss_reduced['loss_box'].mean().item()
-        loss_center = loss_reduced['loss_center'].mean().item()
+        my_cls = loss_reduced['loss_cls'].mean().item()
+        my_box = loss_reduced['loss_box'].mean().item()
+        my_center = loss_reduced['loss_center'].mean().item()
         discrep_loss = dloss.item()
-        del loss, loss_cls, loss_box, loss_center, loss_cls2, loss_box2, loss_center2, loss_dict, p1, p2
+        del loss, loss_cls, loss_box, loss_center, loss_cls2, loss_box2, loss_center2, loss_dict, p1, p2, dloss
         
         # Train Bottom
         model.freeze("top", False)
@@ -172,13 +172,13 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             optimizer.step()
-            del loss, loss_cls, loss_box, loss_center, loss_cls2, loss_box2, loss_center2, loss_dict, p1, p2
+            del loss, loss_cls, loss_box, loss_center, loss_cls2, loss_box2, loss_center2, loss_dict, p1, p2, dloss
         model.freeze("top", True)
         
         del images, targets, target_images, target_targets
         
 
-        losses.append(loss_cls)
+        losses.append(my_cls)
         dlosses.append(discrep_loss)
         avg_loss = sum(losses) / len(losses)
         avg_dloss = sum(dlosses) / len(dlosses)
@@ -189,8 +189,8 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         if get_rank() == 0:
             pbar.set_description(
                 (
-                    f'epoch: {epoch + 1}; cls: {loss_cls:.4f}; avg cls: {avg_loss:.6f}'
-                    f'box: {loss_box:.4f}; center: {loss_center:.4f}'
+                    f'epoch: {epoch + 1}; cls: {my_cls:.4f}; avg cls: {avg_loss:.6f}'
+                    f'box: {my_box:.4f}; center: {my_center:.4f}'
                     f'discrepancy: {discrep_loss:.4f}; avg discrep: {avg_dloss:.6f}'
                 )
             )
