@@ -126,6 +126,8 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         nn.utils.clip_grad_norm_(model.parameters(), 3)
         optimizer.step()
         
+        del loss, loss_cls, loss_box, loss_center, loss_cls2, loss_box2, loss_center2, loss_dict
+        
         # Train Top
         model.freeze("bottom", False)
         loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
@@ -144,6 +146,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         nn.utils.clip_grad_norm_(model.parameters(), 3)
         optimizer.step()
         model.freeze("bottom", True)
+        del loss, loss_cls, loss_box, loss_center, loss_cls2, loss_box2, loss_center2, loss_dict, p1, p2
         
         # Train Bottom
         model.freeze("top", False)
@@ -162,8 +165,11 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
             loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 + dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
-        optimizer.step()
+            optimizer.step()
+            del loss, loss_cls, loss_box, loss_center, loss_cls2, loss_box2, loss_center2, loss_dict, p1, p2
         model.freeze("top", True)
+        
+        del images, targets, target_images, target_targets
         
         loss_reduced = reduce_loss_dict(loss_dict)
         loss_cls = loss_reduced['loss_cls'].mean().item()
