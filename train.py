@@ -184,7 +184,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         avg_dloss = sum(dlosses) / len(dlosses)
         
         if i % 100 == 0:
-            torch.save(model, 'mcd_bdd100k_' + str(epoch + 1) + '.pth')
+            torch.save(model, 'mcd_bdd100k_' + str(args.ckpt + epoch + 1) + '.pth')
         i+=1
         if get_rank() == 0:
             pbar.set_description(
@@ -277,11 +277,11 @@ if __name__ == '__main__':
         collate_fn=collate_fn(args),
     )
     if args.ckpt != None:
-        model = torch.load('mcd_bdd100k_' + args.ckpt + '.pth')
+        model = torch.load('mcd_bdd100k_' + str(args.ckpt) + '.pth')
     for epoch in range(args.epoch):
-        torch.save(model, 'mcd_bdd100k_' + str(epoch + 1) + '.pth')
-        train(args, epoch, source_loader, target_loader, model, optimizer, device)
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        torch.save(model, 'mcd_bdd100k_' + str(args.ckpt + epoch + 1) + '.pth')
+        train(args, epoch, source_loader, target_loader, model, optimizer, device)
 
         scheduler.step()
