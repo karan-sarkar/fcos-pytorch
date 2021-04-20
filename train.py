@@ -86,8 +86,8 @@ def flatten(cls_pred):
     
 
 def discrep(cls_pred1, cls_pred2):
-    cls_flat1 = torch.softmax(flatten(cls_pred1), 1)
-    cls_flat2 = torch.softmax(flatten(cls_pred2), 1)
+    cls_flat1 = torch.softmax(flatten(cls_pred1), -1)
+    cls_flat2 = torch.softmax(flatten(cls_pred2), -1)
     return torch.abs(cls_flat1 - cls_flat2).mean()
 
 def train(args, epoch, loader, target_loader, model, optimizer, device):
@@ -279,9 +279,9 @@ if __name__ == '__main__':
     if args.ckpt != None:
         model = torch.load('mcd_bdd100k_' + str(args.ckpt) + '.pth')
     for epoch in range(args.epoch):
+        train(args, epoch, source_loader, target_loader, model, optimizer, device)
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         torch.save(model, 'mcd_bdd100k_' + str(args.ckpt + epoch + 1) + '.pth')
-        train(args, epoch, source_loader, target_loader, model, optimizer, device)
 
         scheduler.step()
