@@ -278,6 +278,8 @@ if __name__ == '__main__':
     )
     if args.ckpt != None:
         model = torch.load('mcd_bdd100k_' + str(args.ckpt) + '.pth')
+    else:
+        args.ckpt = 0
     for epoch in range(args.epoch):
         train(args, epoch, source_loader, target_loader, model, optimizer, device)
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
