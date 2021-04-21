@@ -247,13 +247,13 @@ if __name__ == '__main__':
     source_loader = DataLoader(
         source_set,
         batch_size=args.batch,
-        shuffle = True,
+        sampler = data_sampler(source_set, True, args.distributed),
         collate_fn=collate_fn(args),
     )
     target_loader = DataLoader(
         target_set,
         batch_size=args.batch,
-        shuffle = True,
+        sampler = data_sampler(target_set, True, args.distributed),
         collate_fn=collate_fn(args),
     )
     source_valid_loader = DataLoader(
