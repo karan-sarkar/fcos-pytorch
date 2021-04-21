@@ -60,7 +60,7 @@ def valid(args, epoch, loader, dataset, model, device):
         images = images.to(device)
         targets = [target.to(device) for target in targets]
 
-        pred, _ = model(inputs=images.tensors, targets=images.sizes)
+        pred, _ = model(images.tensors, targets=images.sizes)
 
         pred = [p.to('cpu') for p in pred]
 
@@ -86,7 +86,6 @@ def flatten(cls_pred):
 
 def discrep(cls_pred1, cls_pred2):
     cls_flat1 = torch.sigmoid(flatten(cls_pred1))
-    print(cls_flat1)
     cls_flat2 = torch.sigmoid(flatten(cls_pred2))
     return torch.abs(cls_flat1 - cls_flat2).mean()
 
@@ -106,13 +105,12 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         
         images = images.to(device)
         targets = [target.to(device) for target in targets]
-        print(len(targets), images.tensors.shape)
         
         target_images = target_images.to(device)
         target_targets = [target.to(device) for target in target_targets]
         
 
-        loss_dict2, loss_dict, _, _ = model(inputs=images.tensors, targets=targets)
+        loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -128,8 +126,8 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         
         # Train Top
         model.freeze("bottom", False)
-        loss_dict2, loss_dict, _, _ = model(inputs=images.tensors, targets=targets)
-        _, _, p1, p2 = model(inputs=target_images.tensors, targets=target_targets)
+        loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
+        _, _, p1, p2 = model(target_images.tensors, targets=target_targets)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -148,8 +146,8 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         # Train Bottom
         model.freeze("top", False)
         for _ in range(4):
-            loss_dict2, loss_dict, _, _ = model(inputs=images.tensors, targets=targets)
-            _, _, p1, p2 = model(inputs=target_images.tensors, targets=target_targets)
+            loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
+            _, _, p1, p2 = model(target_images.tensors, targets=target_targets)
             loss_cls = loss_dict['loss_cls'].mean()
             loss_box = loss_dict['loss_box'].mean()
             loss_center = loss_dict['loss_center'].mean()
@@ -191,29 +189,6 @@ def data_sampler(dataset, shuffle, distributed):
     else:
         return sampler.SequentialSampler(dataset)
 
-
-class MyDataParallel(nn.DataParallel):
-    """
-    we do the scatter outside of the DataPrallel.
-    input: Scattered Inputs without kwargs.
-    """
-
-    def __init__(self, module):
-        # Disable all the other parameters
-        super(MyDataParallel, self).__init__(module)
-
-
-    def forward(self, *inputs, **kwargs):
-        assert len(inputs) == 0, "Only support arguments like [variable_name = xxx]"
-        new_inputs = [{} for _ in self.device_ids]
-        for key in kwargs:
-            for i, device in enumerate(self.device_ids):
-                new_inputs[i][key] = kwargs[key][i].to(device)
-        nones = [[] for _ in self.device_ids]
-        replicas = self.replicate(self.module, self.device_ids)
-        outputs = self.parallel_apply(replicas, nones, new_inputs)
-        return self.gather(outputs, self.output_device)
-
 if __name__ == '__main__':
     args = get_args()
 
@@ -254,7 +229,6 @@ if __name__ == '__main__':
             output_device=args.local_rank,
             broadcast_buffers=False,
         )
-    model = MyDataParallel(model)
 
     source_loader = DataLoader(
         source_set,
