@@ -72,6 +72,7 @@ def valid(args, epoch, loader, dataset, model, device):
         return
 
     evaluate(dataset, preds)
+    del preds
 
 def flatten(cls_pred):
     batch = cls_pred[0].shape[0]
@@ -274,10 +275,10 @@ if __name__ == '__main__':
         args.ckpt = 0
     
     for epoch in range(args.epoch):
-        valid(args, epoch, source_valid_loader, source_valid_set, model, device)
-        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         train(args, epoch, source_loader, target_loader, model, optimizer, device)
         torch.save(model, 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        valid(args, epoch, source_valid_loader, source_valid_set, model, device)
+        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
 
         scheduler.step()
 
