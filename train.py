@@ -268,7 +268,7 @@ if __name__ == '__main__':
         collate_fn=collate_fn(args),
     )
     
-    if args.ckpt is None:
+    if args.ckpt is not None:
         model = torch.load('fcos_' + str(args.ckpt) + '.pth')
     else:
         args.ckpt = 0
