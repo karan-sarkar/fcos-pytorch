@@ -98,6 +98,8 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
     else:
         pbar = loader
     
+    i = 0
+    losses = []
     for (images, targets, _), (target_images, target_targets, _) in zip(pbar, target_loader):
         model.zero_grad()
         
@@ -126,6 +128,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         
         # Train Top
         model.freeze("bottom", False)
+        model.zero_grad()
         loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
         _, _, p1, p2 = model(target_images.tensors, targets=target_targets)
         loss_cls = loss_dict['loss_cls'].mean()
@@ -146,6 +149,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         # Train Bottom
         model.freeze("top", False)
         for _ in range(4):
+            model.zero_grad()
             loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
             _, _, p1, p2 = model(target_images.tensors, targets=target_targets)
             loss_cls = loss_dict['loss_cls'].mean()
@@ -168,6 +172,11 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         loss_box = loss_reduced['loss_box'].mean().item()
         loss_center = loss_reduced['loss_center'].mean().item()
         discrep_loss = dloss.item()
+        losses.append(loss_cls + loss_box + loss_center + discrep_loss)
+        avg = sum(losses) / len(losses)
+        
+        if i % 100 == 0 and i > 0:
+            torch.save(model, 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
 
         if get_rank() == 0:
             pbar.set_description(
@@ -175,8 +184,12 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
                     f'epoch: {epoch + 1}; cls: {loss_cls:.4f}; '
                     f'box: {loss_box:.4f}; center: {loss_center:.4f}'
                     f'discrepancy: {discrep_loss:.4f}'
+                    f'avg: {avg:.4f}'
                 )
             )
+        if i == 1000:
+            break
+        i+= 1
 
 
 def data_sampler(dataset, shuffle, distributed):
@@ -255,13 +268,14 @@ if __name__ == '__main__':
         collate_fn=collate_fn(args),
     )
     
+    if args.ckpt is None:
+        model = torch.load('fcos_' + str(args.ckpt) + '.pth')
+    else:
+        args.ckpt = 0
     
     for epoch in range(args.epoch):
         train(args, epoch, source_loader, target_loader, model, optimizer, device)
-        torch.save(
-                {'model': model.module.state_dict(), 'optim': optimizer.state_dict()},
-                f'checkpoint/epoch-{epoch + 1}.pt',
-            )
+        torch.save(model, 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
 
