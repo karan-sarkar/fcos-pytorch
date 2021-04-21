@@ -68,11 +68,11 @@ class SigmoidFocalLoss(nn.Module):
     def forward(self, out, target):
         n_class = out.shape[1]
         class_ids = torch.arange(
-            0, n_class, dtype=target.dtype, device=target.device
+            1, n_class, dtype=target.dtype, device=target.device
         ).unsqueeze(0)
 
         t = target.unsqueeze(1)
-        p = torch.softmax(out, -1)
+        p = torch.softmax(out, -1)[:, :, 1:]
 
         gamma = self.gamma
         alpha = self.alpha
@@ -83,8 +83,8 @@ class SigmoidFocalLoss(nn.Module):
         # print(term1.sum(), term2.sum())
 
         loss = (
-            -(t == class_ids).float() * alpha * term1
-            - ((t != class_ids)).float() * (1 - alpha) * term2
+            -((t == class_ids)).float() * alpha * term1
+            - ((t != class_ids) * (t >= 0)).float() * (1 - alpha) * term2
         )
 
         return loss.sum()
