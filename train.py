@@ -89,13 +89,12 @@ def flatten(cls_pred):
 def discrep(cls_pred1, cls_pred2):
     batch = cls_pred1[0].shape[0]
     crit = SigmoidFocalLoss(2, 0.25)
-    cls_flat1 = flatten(cls_pred1)
-    cls_flat2 = flatten(cls_pred2)
-    labels1 = (cls_flat1.sigmoid().max(-1)[0] > 0.05).int() * (cls_flat1.argmax(-1) + 1)
-    labels2 = (cls_flat2.sigmoid().max(-1)[0] > 0.05).int() * (cls_flat2.argmax(-1) + 1)
-    pos_id1 = torch.nonzero(labels1 > 0).squeeze(1)
-    pos_id2 = torch.nonzero(labels2 > 0).squeeze(1)
-    return crit(cls_flat1, labels2) / (pos_id2.numel() + batch) + crit(cls_flat2, labels1) / (pos_id1.numel() + batch)  
+    cls_flat1 = flatten(cls_pred1).sigmoid()
+    cls_flat2 = flatten(cls_pred2).sigmoid()
+    labels = (cls_flat1.max(-1)[0] > 0.05 or cls_flat2.max(-1)[0] > 0.05).int()
+    pos_id = torch.nonzero(labels > 0).squeeze(1)
+    
+    return torch.abs(cls_flat1.clamp(min = 0.05, max = 1) - cls_flat1.clamp(min = 0.05, max = 1)).mean(-1).sum() / (pos_id.numel() + batch) 
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
     model.train()
