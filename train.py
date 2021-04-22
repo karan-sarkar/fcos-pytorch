@@ -94,7 +94,7 @@ def discrep(cls_pred1, cls_pred2):
     labels = torch.logical_or((cls_flat1.max(-1)[0] > 0.05),(cls_flat2.max(-1)[0] > 0.05)).int()
     pos_id = torch.nonzero(labels > 0).squeeze(1)
     
-    return torch.abs(cls_flat1.clamp(min = 0.05, max = 1) - cls_flat1.clamp(min = 0.05, max = 1)).mean(-1).sum() / (pos_id.numel() + batch) 
+    return torch.abs(cls_flat1[pos_id] - cls_flat1[pos_id]).mean(-1).sum() / (pos_id.numel() + batch) 
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
     model.train()
@@ -132,7 +132,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer.step()
-        del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2
+        del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2, loss_dict, loss_dict2
         
         # Train Top
         model.freeze("bottom", False)
@@ -153,11 +153,11 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer.step()
         model.freeze("bottom", True)
-        del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2
+        del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2, loss_dict, loss_dict2
         
         # Train Bottom
         model.freeze("top", False)
-        for _ in range(5):
+        for j in range(5):
             optimizer2.zero_grad()
             loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
             loss_cls = loss_dict['loss_cls'].mean()
@@ -173,7 +173,9 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             optimizer2.step()
-            del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2
+            del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2, loss_dict2
+            if j != 4:
+                del loss_dict
         model.freeze("top", True)
         
         loss_reduced = reduce_loss_dict(loss_dict)
