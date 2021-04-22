@@ -185,6 +185,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         discrep_loss = dloss.item()
         losses.append(loss_cls + loss_box + loss_center + discrep_loss)
         avg = sum(losses) / len(losses)
+        del loss_dict, loss_reduced
         
         if i % 100 == 0 and i > 0:
             torch.save(model, 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
