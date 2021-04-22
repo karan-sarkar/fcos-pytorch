@@ -151,18 +151,9 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         model.freeze("top", False)
         for _ in range(5):
             optimizer.zero_grad()
-            loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
             _, _, p1, p2 = model(target_images.tensors, targets=target_targets)
-            loss_cls = loss_dict['loss_cls'].mean()
-            loss_box = loss_dict['loss_box'].mean()
-            loss_center = loss_dict['loss_center'].mean()
-            
-            loss_cls2 = loss_dict2['loss_cls'].mean()
-            loss_box2 = loss_dict2['loss_box'].mean()
-            loss_center2 = loss_dict2['loss_center'].mean()
             dloss = discrep(p1, p2)
-
-            loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 + 10 * dloss
+            loss = dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 3)
             optimizer.step()
@@ -275,10 +266,10 @@ if __name__ == '__main__':
         args.ckpt = 0
     
     for epoch in range(args.epoch):
-        train(args, epoch, source_loader, target_loader, model, optimizer, device)
-        torch.save(model, 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        train(args, epoch, source_loader, target_loader, model, optimizer, device)
+        torch.save(model, 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
 
         scheduler.step()
 
