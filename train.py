@@ -152,7 +152,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         model.freeze("top", False)
         for _ in range(5):
             optimizer2.zero_grad()
-             loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
+            loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
             loss_cls = loss_dict['loss_cls'].mean()
             loss_box = loss_dict['loss_box'].mean()
             loss_center = loss_dict['loss_center'].mean()
