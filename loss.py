@@ -280,7 +280,7 @@ class FCOSLoss(nn.Module):
 
         pos_id = torch.nonzero(labels_flat > 0).squeeze(1)
 
-        cls_loss = self.cls_loss(cls_flat, labels_flat.int()) / (pos_id.numel() + batch)
+        cls_loss = nn.CrossEntropy()(cls_flat.view(-1, n_class), labels_flat.int().view(n_class))
 
         box_flat = box_flat[pos_id]
         center_flat = center_flat[pos_id]
