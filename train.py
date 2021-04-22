@@ -85,9 +85,14 @@ def flatten(cls_pred):
     cls_flat = torch.cat(cls_flat, 0)
     return cls_flat
 
+focal_loss = SigmoidFocalLoss(2.0, 0.25)
+
 def discrep(cls_pred1, cls_pred2):
+    t = nn.Threshold(-0.05, 0)
     cls_flat1 = torch.sigmoid(flatten(cls_pred1))
     cls_flat2 = torch.sigmoid(flatten(cls_pred2))
+    cls_flat1 = -1 * t(-1 * cls_flat1)
+    cls_flat2 = -1 * t(-1 * cls_flat2)
     return torch.abs(cls_flat1 - cls_flat2).mean()
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
