@@ -86,11 +86,10 @@ def flatten(cls_pred):
     return cls_flat
 
 def discrep(cls_pred1, cls_pred2):
-    t = nn.Threshold(-0.05, 0)
     cls_flat1 = torch.sigmoid(flatten(cls_pred1))
     cls_flat2 = torch.sigmoid(flatten(cls_pred2))
-    cls_flat1 = -1 * t(-1 * cls_flat1)
-    cls_flat2 = -1 * t(-1 * cls_flat2)
+    cls_flat1 = cls_flat1.clamp(0.05, 1)
+    cls_flat2 = cls_flat2.clamp(0.05, 1)
     return torch.abs(cls_flat1 - cls_flat2).mean()
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
