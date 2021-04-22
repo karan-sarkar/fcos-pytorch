@@ -143,7 +143,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
 
         loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 - dloss
         loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), 3)
+        nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer.step()
         model.freeze("bottom", True)
         
@@ -155,7 +155,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
             dloss = discrep(p1, p2)
             loss = dloss
             loss.backward()
-            nn.utils.clip_grad_norm_(model.parameters(), 3)
+            nn.utils.clip_grad_norm_(model.parameters(), 10)
             optimizer2.step()
         model.freeze("top", True)
         
