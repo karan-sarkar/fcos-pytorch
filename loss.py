@@ -1,9 +1,28 @@
 import torch
 from torch import nn
+import torch.nn.functional as F
 
 
 INF = 100000000
 
+class FocalLoss(nn.Module):
+    
+    def __init__(self, weight=None, 
+                 gamma=2., reduction='none'):
+        nn.Module.__init__(self)
+        self.weight = weight
+        self.gamma = gamma
+        self.reduction = reduction
+        
+    def forward(self, input_tensor, target_tensor):
+        log_prob = F.log_softmax(input_tensor, dim=-1)
+        prob = torch.exp(log_prob)
+        return F.nll_loss(
+            ((1 - prob) ** self.gamma) * log_prob, 
+            target_tensor, 
+            weight=self.weight,
+            reduction = self.reduction
+        )
 
 class IOULoss(nn.Module):
     def __init__(self, loc_loss_type):
@@ -279,7 +298,7 @@ class FCOSLoss(nn.Module):
         box_targets_flat = torch.cat(box_targets_flat, 0)
 
         pos_id = torch.nonzero(labels_flat > 0).squeeze(1)
-        cls_loss = nn.CrossEntropyLoss()(cls_flat.view(-1, n_class), labels_flat.long().view(-1))
+        cls_loss = FocalLoss()(cls_flat.view(-1, n_class), labels_flat.long().view(-1))
 
         box_flat = box_flat[pos_id]
         center_flat = center_flat[pos_id]
