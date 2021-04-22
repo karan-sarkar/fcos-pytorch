@@ -88,7 +88,7 @@ def flatten(cls_pred):
 def discrep(cls_pred1, cls_pred2):
     cls_flat1 = torch.softmax(flatten(cls_pred1), -1)
     cls_flat2 = torch.softmax(flatten(cls_pred2), -1)
-    return torch.abs(cls_flat1 - cls_flat2).mean()
+    return nn.L1Loss()(cls_flat1,cls_flat2)
 
 def train(args, epoch, loader, target_loader, model, optimizer, device):
     model.train()
