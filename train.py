@@ -92,6 +92,8 @@ def discrep(cls_pred1, cls_pred2):
     cls_flat2 = flatten(cls_pred2)
     labels1 = (cls_flat1.sigmoid().max(-1)[0] > 0.05).int() * (cls_flat1.argmax(-1) + 1)
     labels2 = (cls_flat2.sigmoid().max(-1)[0] > 0.05).int() * (cls_flat2.argmax(-1) + 1)
+    print(cls_flat2.sigmoid().max(-1)[0])
+    print(labels1)
     return crit(cls_flat1, labels2) + crit(cls_flat2, labels1)
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
