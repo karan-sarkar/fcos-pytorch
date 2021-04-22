@@ -5,6 +5,7 @@ from torch import nn, optim
 from torch.utils.data import DataLoader, sampler
 from tqdm import tqdm
 
+from loss import SigmoidFocalLoss
 from argument import get_args
 from backbone import vovnet57
 from dataset import COCODataset, collate_fn
@@ -86,11 +87,9 @@ def flatten(cls_pred):
     return cls_flat
 
 def discrep(cls_pred1, cls_pred2):
-    cls_flat1 = torch.sigmoid(flatten(cls_pred1))
-    cls_flat2 = torch.sigmoid(flatten(cls_pred2))
-    cls_flat1 = cls_flat1.clamp(0.05, 1)
-    cls_flat2 = cls_flat2.clamp(0.05, 1)
-    return torch.abs(cls_flat1 - cls_flat2).mean()
+    cls_flat1 = flatten(cls_pred1)
+    cls_flat2 = flatten(cls_pred2)
+    return torch.abs(cls_flat1.softmax(-1) - cls_flat2.softmax(-1)).mean()
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
     model.train()
@@ -153,9 +152,17 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         model.freeze("top", False)
         for _ in range(5):
             optimizer2.zero_grad()
+             loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
+            loss_cls = loss_dict['loss_cls'].mean()
+            loss_box = loss_dict['loss_box'].mean()
+            loss_center = loss_dict['loss_center'].mean()
+            
+            loss_cls2 = loss_dict2['loss_cls'].mean()
+            loss_box2 = loss_dict2['loss_box'].mean()
+            loss_center2 = loss_dict2['loss_center'].mean()
             _, _, p1, p2 = model(target_images.tensors, targets=target_targets)
             dloss = discrep(p1, p2)
-            loss = dloss
+            loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 + dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             optimizer2.step()
