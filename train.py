@@ -95,7 +95,7 @@ def discrep(cls_pred1, cls_pred2):
     labels2 = (cls_flat2.sigmoid().max(-1)[0] > 0.05).int() * (cls_flat2.argmax(-1) + 1)
     pos_id1 = torch.nonzero(labels1 > 0).squeeze(1)
     pos_id2 = torch.nonzero(labels2 > 0).squeeze(1)
-    return crit(cls_flat1, labels2) / (pos_id1.numel() + batch) + crit(cls_flat2, labels1) / (pos_id2.numel() + batch)  
+    return crit(cls_flat1, labels2) / (pos_id2.numel() + batch) + crit(cls_flat2, labels1) / (pos_id1.numel() + batch)  
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
     model.train()
