@@ -132,6 +132,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer.step()
+        del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2
         
         # Train Top
         model.freeze("bottom", False)
@@ -152,6 +153,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer.step()
         model.freeze("bottom", True)
+        del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2
         
         # Train Bottom
         model.freeze("top", False)
@@ -171,6 +173,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             optimizer2.step()
+            del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2
         model.freeze("top", True)
         
         loss_reduced = reduce_loss_dict(loss_dict)
