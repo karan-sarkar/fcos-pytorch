@@ -87,7 +87,7 @@ def flatten(cls_pred):
     return cls_flat
 
 def discrep(cls_pred1, cls_pred2):
-    batch cls_pred1.shape[0]
+    batch = cls_pred1.shape[0]
     crit = SigmoidFocalLoss(2, 0.25)
     cls_flat1 = flatten(cls_pred1)
     cls_flat2 = flatten(cls_pred2)
