@@ -91,7 +91,7 @@ def discrep(cls_pred1, cls_pred2):
     crit = SigmoidFocalLoss(2, 0.25)
     cls_flat1 = flatten(cls_pred1).sigmoid()
     cls_flat2 = flatten(cls_pred2).sigmoid()
-    labels = (cls_flat1.max(-1)[0] > 0.05 or cls_flat2.max(-1)[0] > 0.05).int()
+    labels = ((cls_flat1.max(-1)[0] > 0.05) or (cls_flat2.max(-1)[0] > 0.05)).int()
     pos_id = torch.nonzero(labels > 0).squeeze(1)
     
     return torch.abs(cls_flat1.clamp(min = 0.05, max = 1) - cls_flat1.clamp(min = 0.05, max = 1)).mean(-1).sum() / (pos_id.numel() + batch) 
