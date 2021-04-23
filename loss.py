@@ -8,12 +8,12 @@ INF = 100000000
 from torch.autograd import Variable
 
 class FocalLoss(nn.Module):
-    def __init__(self, alpha: float, gamma: Optional[float] = 2.0,
-                 reduction: Optional[str] = 'none') -> None:
+    def __init__(self, alpha, gamma = 2.0,
+                 reduction):
         super(FocalLoss, self).__init__()
-        self.alpha: float = alpha
-        self.gamma: Optional[float] = gamma
-        self.reduction: Optional[str] = reduction
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
         self.eps: float = 1e-6
 
     def forward(
