@@ -8,32 +8,41 @@ INF = 100000000
 from torch.autograd import Variable
 
 class FocalLoss(nn.Module):
-    def __init__(self, gamma=0, alpha=None, size_average=True):
+    def __init__(self, alpha: float, gamma: Optional[float] = 2.0,
+                 reduction: Optional[str] = 'none') -> None:
         super(FocalLoss, self).__init__()
-        self.gamma = gamma
-        self.alpha = torch.Tensor([alpha,1-alpha])
-        self.size_average = size_average
+        self.alpha: float = alpha
+        self.gamma: Optional[float] = gamma
+        self.reduction: Optional[str] = reduction
+        self.eps: float = 1e-6
 
-    def forward(self, input, target):
-        if input.dim()>2:
-            input = input.view(input.size(0),input.size(1),-1)  # N,C,H,W => N,C,H*W
-            input = input.transpose(1,2)    # N,C,H*W => N,H*W,C
-            input = input.contiguous().view(-1,input.size(2))   # N,H*W,C => N*H*W,C
-        target = target.view(-1,1)
+    def forward(
+            self,
+            input: torch.Tensor,
+            target: torch.Tensor) -> torch.Tensor:
+        # compute softmax over the classes axis
+        input_soft = F.softmax(input, dim=1) + self.eps
 
-        logpt = F.log_softmax(input)
-        logpt = logpt.gather(1,target)
-        logpt = logpt.view(-1)
-        pt = Variable(logpt.data.exp())
+        # create the labels one hot tensor
+        target_one_hot = F.one_hot(target, num_classes=input.shape[1],
+                                 device=input.device, dtype=input.dtype)
 
-        if self.alpha is not None:
-            if self.alpha.type()!=input.data.type():
-                self.alpha = self.alpha.type_as(input.data)
-            at = self.alpha.gather(0,target.data.view(-1))
-            logpt = logpt * Variable(at)
+        # compute the actual focal loss
+        weight = torch.pow(1. - input_soft, self.gamma)
+        focal = -self.alpha * weight * torch.log(input_soft)
+        loss_tmp = torch.sum(target_one_hot * focal, dim=1)
 
-        loss = -1 * (1-pt)**self.gamma * logpt
-        return loss.sum()
+        loss = -1
+        if self.reduction == 'none':
+            loss = loss_tmp
+        elif self.reduction == 'mean':
+            loss = torch.mean(loss_tmp)
+        elif self.reduction == 'sum':
+            loss = torch.sum(loss_tmp)
+        else:
+            raise NotImplementedError("Invalid reduction mode: {}"
+                                      .format(self.reduction))
+        return loss
 
 
 class IOULoss(nn.Module):
@@ -310,7 +319,7 @@ class FCOSLoss(nn.Module):
         box_targets_flat = torch.cat(box_targets_flat, 0)
 
         pos_id = torch.nonzero(labels_flat > 0).squeeze(1)
-        cls_loss = FocalLoss(alpha = 0.25, gamma = 2)(cls_flat.view(-1, n_class), labels_flat.long().view(-1)) / (pos_id.numel() + batch)
+        cls_loss = FocalLoss(alpha = 0.25, gamma = 2, reduction = 'mean')(cls_flat.view(-1, n_class), labels_flat.long().view(-1))
 
         box_flat = box_flat[pos_id]
         center_flat = center_flat[pos_id]
