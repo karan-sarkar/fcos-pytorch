@@ -8,8 +8,7 @@ INF = 100000000
 from torch.autograd import Variable
 
 class FocalLoss(nn.Module):
-    def __init__(self, alpha, gamma = 2.0,
-                 reduction):
+    def __init__(self, alpha, gamma, reduction):
         super(FocalLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
