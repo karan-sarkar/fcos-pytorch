@@ -60,7 +60,7 @@ def valid(args, epoch, loader, dataset, model, device):
         images = images.to(device)
         targets = [target.to(device) for target in targets]
 
-        pred, _ = model(images.tensors, images.sizes)
+        pred, _ = model(images.tensors, image_sizes = images.sizes)
 
         pred = [p.to('cpu') for p in pred]
 
@@ -194,6 +194,9 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
                     f'discrepancy: {discrep_loss:.4f}; avg discrep: {avg_dloss:.6f}'
                 )
             )
+        
+        if i == 1000:
+            break
 
 
 def data_sampler(dataset, shuffle, distributed):
@@ -281,9 +284,9 @@ if __name__ == '__main__':
     else:
         args.ckpt = 0
     for epoch in range(args.epoch):
-        train(args, epoch, source_loader, target_loader, model, optimizer, device)
-        torch.save(model, 'mcd_bdd100k_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        train(args, epoch, source_loader, target_loader, model, optimizer, device)
+        torch.save(model, 'mcd_bdd100k_' + str(args.ckpt + epoch + 1) + '.pth')
 
         scheduler.step()
