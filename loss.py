@@ -33,8 +33,7 @@ class FocalLoss(nn.Module):
             logpt = logpt * Variable(at)
 
         loss = -1 * (1-pt)**self.gamma * logpt
-        if self.size_average: return loss.mean()
-        else: return loss.sum()
+        return loss.sum()
 
 
 class IOULoss(nn.Module):
@@ -311,7 +310,7 @@ class FCOSLoss(nn.Module):
         box_targets_flat = torch.cat(box_targets_flat, 0)
 
         pos_id = torch.nonzero(labels_flat > 0).squeeze(1)
-        cls_loss = FocalLoss(alpha = 0.25, gamma = 2)(cls_flat.view(-1, n_class), labels_flat.long().view(-1))
+        cls_loss = FocalLoss(alpha = 0.25, gamma = 2)(cls_flat.view(-1, n_class), labels_flat.long().view(-1)) / (pos_id.numel() + batch)
 
         box_flat = box_flat[pos_id]
         center_flat = center_flat[pos_id]
