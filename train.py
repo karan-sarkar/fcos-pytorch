@@ -180,8 +180,8 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         avg = sum(losses) / len(losses)
         del loss_dict, loss_reduced
         
-        if i % 100 == 0 and i > 0:
-            torch.save(model, 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        if i % 100 == 0:
+            torch.save((model, optimizer, optimizer2), 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
 
         if get_rank() == 0:
             pbar.set_description(
@@ -282,13 +282,13 @@ if __name__ == '__main__':
     )
     
     if args.ckpt is not None:
-        model = torch.load('fcos_' + str(args.ckpt) + '.pth')
+        (model, optimizer, optimizer2) = torch.load('fcos_' + str(args.ckpt) + '.pth')
     else:
         args.ckpt = 0
     
     for epoch in range(args.epoch):
         train(args, epoch, source_loader, target_loader, model, optimizer, optimizer2, device)
-        torch.save(model, 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        torch.save((model, optimizer, optimizer2), 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         scheduler.step()
