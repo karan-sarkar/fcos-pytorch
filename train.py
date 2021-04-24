@@ -87,7 +87,7 @@ def flatten(cls_pred):
     return cls_flat
 
 def discrep(cls_pred1, cls_pred2):
-    return nn.L1Loss()(cls_pred1.sigmoid(), cls_pred2.sigmoid())
+    return nn.L1Loss()(flatten(cls_pred1).sigmoid(), flatten(cls_pred2).sigmoid())
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
     model.train()
