@@ -228,6 +228,7 @@ if __name__ == '__main__':
 
     backbone = vovnet57(pretrained=False)
     model = FCOS(args, backbone)
+    model = nn.DataParallel(model)
     model = model.to(device)
 
     optimizer = optim.SGD(
@@ -256,7 +257,7 @@ if __name__ == '__main__':
             output_device=args.local_rank,
             broadcast_buffers=False,
         )
-    model = nn.DataParallel(model)
+    
 
     source_loader = DataLoader(
         source_set,
