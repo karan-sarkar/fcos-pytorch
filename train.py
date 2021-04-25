@@ -111,7 +111,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         
         target_images = target_images.to(device)
         target_targets = [target.to(device) for target in target_targets]
-        r = torch.range(0, len(images) - 1).to(device)
+        r = torch.range(0, len(targets) - 1).to(device)
 
         loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
