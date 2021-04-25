@@ -199,15 +199,6 @@ class FCOS(nn.Module):
                 module.eval()
 
         self.apply(freeze_bn)
-    
-    def freeze(self, section, on):
-        i = 0
-        for n, p in self.named_parameters():
-            if section == "bottom" and 'fpn' not in n and 'head' not in n:
-                p.requires_grad = on
-            if section == "top" and ('fpn' in n or 'head' in n):
-                p.requires_grad = on
-            i += 1
 
     def forward(self, input, image_sizes=None, targets=None, r = None):
         if r is not None and targets is not None:

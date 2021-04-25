@@ -89,6 +89,15 @@ def flatten(cls_pred):
 def discrep(cls_pred1, cls_pred2):
     return nn.L1Loss()(flatten(cls_pred1).sigmoid(), flatten(cls_pred2).sigmoid())
 
+def freeze(model, section, on):
+    i = 0
+    for n, p in model.named_parameters():
+        if section == "bottom" and 'fpn' not in n and 'head' not in n:
+            p.requires_grad = on
+        if section == "top" and ('fpn' in n or 'head' in n):
+            p.requires_grad = on
+        i += 1
+
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
     model.train()
 
@@ -129,7 +138,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2, loss_dict, loss_dict2
         
         # Train Top
-        model.freeze("bottom", False)
+        freeze(model, "bottom", False)
         optimizer.zero_grad()
         loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets, r=r)
         _, _, p1, p2 = model(target_images.tensors, targets=target_targets, r=r)
@@ -146,11 +155,11 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer.step()
-        model.freeze("bottom", True)
+        freeze(model, "bottom", True)
         del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2, loss_dict, loss_dict2
         
         # Train Bottom
-        model.freeze("top", False)
+        freeze(model, "top", False)
         for j in range(5):
             optimizer2.zero_grad()
             loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets, r=r)
@@ -170,7 +179,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
             del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2, loss_dict2
             if j != 4:
                 del loss_dict
-        model.freeze("top", True)
+        freeze(model, "top", True)
         
         loss_reduced = reduce_loss_dict(loss_dict)
         loss_cls = loss_reduced['loss_cls'].mean().item()
