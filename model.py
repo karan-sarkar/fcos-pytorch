@@ -211,7 +211,7 @@ class FCOS(nn.Module):
 
     def forward(self, input, image_sizes=None, targets=None, r = None):
         if r is not None and targets is not None:
-            targets = [targets[i] for i in r.tolist()]
+            targets = [targets[int(i)] for i in r.tolist()]
         features = self.backbone(input)
         features1 = self.fpn1(features)
         features2 = self.fpn2(features)
