@@ -219,6 +219,7 @@ if __name__ == '__main__':
         torch.distributed.init_process_group(backend='nccl', init_method='env://')
         synchronize()
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     source_set = COCODataset(args.path, 'train', preset_transform(args, train=True))
     target_set = COCODataset(args.path2, 'train', preset_transform(args, train=True))
@@ -227,14 +228,8 @@ if __name__ == '__main__':
 
     backbone = vovnet57(pretrained=False)
     model = FCOS(args, backbone)
-    use_cuda = torch.cuda.is_available()
-    if use_cuda:
-        gpu_ids = list(map(int, args.gpu_ids.split(',')))
-        cuda='cuda:'+ str(gpu_ids[0])
-        model = DataParallel(model,device_ids=gpu_ids)
-
-    device= torch.device(cuda if use_cuda else 'cpu')
-    model.to(device)
+    model = nn.DataParallel(model,  device_ids=[0, 1, 2])
+    model = model.to(device)
 
     optimizer = optim.SGD(
         model.parameters(),
