@@ -215,7 +215,7 @@ class FCOS(nn.Module):
         self.to(input.device)
         features = self.backbone(input)
         features1 = self.fpn1(features)
-        features2 = self.fpn2(features).
+        features2 = self.fpn2(features)
         cls_pred1, box_pred1, center_pred1 = self.head1(features1)
         cls_pred2, box_pred2, center_pred2 = self.head2(features2)
         # print(cls_pred, box_pred, center_pred)
