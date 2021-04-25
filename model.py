@@ -210,7 +210,7 @@ class FCOS(nn.Module):
             i += 1
 
     def forward(self, input, image_sizes=None, targets=None, r = None):
-        print(r.shape)
+        print(r.shape, input.shape)
         if r is not None and targets is not None:
             targets = [targets[int(i)] for i in r.tolist()]
         features = self.backbone(input)

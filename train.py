@@ -219,7 +219,7 @@ if __name__ == '__main__':
         torch.distributed.init_process_group(backend='nccl', init_method='env://')
         synchronize()
 
-    device = 'cuda'
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     source_set = COCODataset(args.path, 'train', preset_transform(args, train=True))
     target_set = COCODataset(args.path2, 'train', preset_transform(args, train=True))
