@@ -101,6 +101,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
     i = 0
     losses = []
     for (images, targets, _), (target_images, target_targets, _) in zip(pbar, target_loader):
+        
         optimizer.zero_grad()
         
         # Train Bottom + Top
@@ -110,9 +111,9 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         
         target_images = target_images.to(device)
         target_targets = [target.to(device) for target in target_targets]
-        
+        r = torch.range(0, images.size(0) - 1).to(device)
 
-        loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
+        loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -130,8 +131,8 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         # Train Top
         model.freeze("bottom", False)
         optimizer.zero_grad()
-        loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
-        _, _, p1, p2 = model(target_images.tensors, targets=target_targets)
+        loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets, r=r)
+        _, _, p1, p2 = model(target_images.tensors, targets=target_targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -152,7 +153,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         model.freeze("top", False)
         for j in range(5):
             optimizer2.zero_grad()
-            loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets)
+            loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
             loss_box = loss_dict['loss_box'].mean()
             loss_center = loss_dict['loss_center'].mean()
@@ -160,7 +161,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
             loss_cls2 = loss_dict2['loss_cls'].mean()
             loss_box2 = loss_dict2['loss_box'].mean()
             loss_center2 = loss_dict2['loss_center'].mean()
-            _, _, p1, p2 = model(target_images.tensors, targets=target_targets)
+            _, _, p1, p2 = model(target_images.tensors, targets=target_targets, r=r)
             dloss = discrep(p1, p2)
             loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 + dloss
             loss.backward()
@@ -255,6 +256,7 @@ if __name__ == '__main__':
             output_device=args.local_rank,
             broadcast_buffers=False,
         )
+    model = nn.DataParallel(model)
 
     source_loader = DataLoader(
         source_set,
