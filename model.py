@@ -209,7 +209,9 @@ class FCOS(nn.Module):
                 p.requires_grad = on
             i += 1
 
-    def forward(self, input, image_sizes=None, targets=None):
+    def forward(self, input, image_sizes=None, targets=None, r = None):
+        if r is not None and targets is not None:
+            targets = [targets[i] for i in r.tolist()]
         features = self.backbone(input)
         features1 = self.fpn1(features)
         features2 = self.fpn2(features)
