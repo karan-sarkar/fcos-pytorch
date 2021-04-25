@@ -211,10 +211,11 @@ class FCOS(nn.Module):
 
     def forward(self, input, image_sizes=None, targets=None, r = None):
         if r is not None and targets is not None:
-            targets = [targets[int(i)] for i in r.tolist()]
+            targets = [targets[int(i)].to(input.device) for i in r.tolist()]
+        self.to(input.device)
         features = self.backbone(input)
         features1 = self.fpn1(features)
-        features2 = self.fpn2(features)
+        features2 = self.fpn2(features).
         cls_pred1, box_pred1, center_pred1 = self.head1(features1)
         cls_pred2, box_pred2, center_pred2 = self.head2(features2)
         # print(cls_pred, box_pred, center_pred)
