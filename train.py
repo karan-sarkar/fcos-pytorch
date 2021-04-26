@@ -43,11 +43,16 @@ def accumulate_predictions(predictions):
 
 
 @torch.no_grad()
-def valid(args, epoch, loader, dataset, model, device):
+def valid(args, epoch, loader, dataset, m, device):
     if args.distributed:
         model = model.module
 
     torch.cuda.empty_cache()
+    
+    if isinstance(model, nn.DataParallel):
+        model = m.module
+    else:
+        model = m
 
     model.eval()
 
@@ -294,16 +299,17 @@ if __name__ == '__main__':
     
     if args.ckpt is not None:
         (model, optimizer, optimizer2) = torch.load('fcos_' + str(args.ckpt) + '.pth')
-        model = nn.DataParallel(model)
+        if not isinstance(model, nn.DataParallel):
+            model = nn.DataParallel(model)
         model = model.to(device)
     else:
         args.ckpt = 0
     
     for epoch in range(args.epoch):
-        train(args, epoch, source_loader, target_loader, model, optimizer, optimizer2, device)
-        torch.save((model, optimizer, optimizer2), 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        train(args, epoch, source_loader, target_loader, model, optimizer, optimizer2, device)
+        torch.save((model, optimizer, optimizer2), 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         scheduler.step()
 
 
