@@ -304,6 +304,10 @@ if __name__ == '__main__':
         model = model.to(device)
     else:
         args.ckpt = 0
+    for g in optimizer.param_groups:
+        g['lr'] = args.lr
+    for g in optimizer2.param_groups:
+        g['lr'] = args.lr2
     
     for epoch in range(args.epoch):
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
