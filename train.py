@@ -92,7 +92,7 @@ def flatten(cls_pred):
     return cls_flat
 
 def discrep(cls_pred1, cls_pred2):
-    return nn.L1Loss()(flatten(cls_pred1).sigmoid(), flatten(cls_pred2).sigmoid())
+    return 3 * nn.L1Loss()(flatten(cls_pred1).sigmoid(), flatten(cls_pred2).sigmoid())
 
 def freeze(model, section, on):
     i = 0
