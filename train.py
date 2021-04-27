@@ -106,10 +106,11 @@ def freeze(model, section, on):
 focal_loss = SigmoidFocalLoss(2.0, 0.25)
 
 def harden(cls_pred):
+    batch = cls_pred[0].shape[0]
     cls_flat = flatten(cls_pred)
-    clusters = (cls_flat.sigmoid().max(-1)[0] > 0.05).int() * cls_flat.argmax(-1)
-    print(clusters)
-    return focal_loss(cls_flat, clusters)
+    clusters = (cls_flat.sigmoid().max(-1)[0] > 0.05).int() * (cls_flat.argmax(-1) + 1)
+    pos_id = torch.nonzero(clusters > 0).squeeze(1)
+    return focal_loss(cls_flat, clusters) / (pos_id.numel() + batch)
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
     model.train()
