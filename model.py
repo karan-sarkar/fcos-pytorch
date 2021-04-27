@@ -164,11 +164,7 @@ class FCOS(nn.Module):
             config.feat_channels[-1], config.out_channel, use_p5=config.use_p5
         )
         self.fpn1 = FPN(config.feat_channels, config.out_channel, fpn_top)
-        self.fpn2 = FPN(config.feat_channels, config.out_channel, fpn_top)
         self.head1 = FCOSHead(
-            config.out_channel, config.n_class, config.n_conv, config.prior
-        )
-        self.head2 = FCOSHead(
             config.out_channel, config.n_class, config.n_conv, config.prior
         )
         self.postprocessor = FCOSPostprocessor(
@@ -206,9 +202,7 @@ class FCOS(nn.Module):
         self.to(input.device)
         features = self.backbone(input)
         features1 = self.fpn1(features)
-        features2 = self.fpn2(features)
         cls_pred1, box_pred1, center_pred1 = self.head1(features1)
-        cls_pred2, box_pred2, center_pred2 = self.head2(features2)
         # print(cls_pred, box_pred, center_pred)
         location1 = self.compute_location(features1)
         location2 = self.compute_location(features2)
@@ -222,16 +216,7 @@ class FCOS(nn.Module):
                 'loss_box': loss_box,
                 'loss_center': loss_center,
             }
-            loss_cls, loss_box, loss_center = self.loss(
-                location2, cls_pred2, box_pred2, center_pred2, targets
-            )
-            losses2 = {
-                'loss_cls': loss_cls,
-                'loss_box': loss_box,
-                'loss_center': loss_center,
-            }
-
-            return losses1, losses2, cls_pred1, cls_pred2
+            return losses1, cls_pred1
 
         else:
             boxes1 = self.postprocessor(

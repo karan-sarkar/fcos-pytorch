@@ -103,6 +103,13 @@ def freeze(model, section, on):
             p.requires_grad = on
         i += 1
 
+focal_loss = SigmoidFocalLoss(2.0, 0.25)
+
+def harden(cls_pred)
+    cls_flat = flatten(cls_pred)
+    clusters = (cls_pred.max(-1)[0] > 0.05).int() * cls_pred.argmax(-1)
+    return focal_loss(cls_flat, clusters)
+
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
     model.train()
 
@@ -127,61 +134,51 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         target_targets = [target.to(device) for target in target_targets]
         r = torch.range(0, len(targets) - 1).to(device)
 
-        loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets, r=r)
+        loss_dict, _ = model(images.tensors, targets=targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
         
-        loss_cls2 = loss_dict2['loss_cls'].mean()
-        loss_box2 = loss_dict2['loss_box'].mean()
-        loss_center2 = loss_dict2['loss_center'].mean()
-
-        loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2
+        loss = loss_cls + loss_box + loss_center 
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer.step()
-        del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2, loss_dict, loss_dict2
+        del loss_cls, loss_box, loss_center, loss_dict
         
         # Train Top
         freeze(model, "bottom", False)
         optimizer.zero_grad()
-        loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets, r=r)
-        _, _, p1, p2 = model(target_images.tensors, targets=target_targets, r=r)
+        loss_dict, _ = model(images.tensors, targets=targets, r=r)
+        _, p = model(target_images.tensors, targets=target_targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
         
-        loss_cls2 = loss_dict2['loss_cls'].mean()
-        loss_box2 = loss_dict2['loss_box'].mean()
-        loss_center2 = loss_dict2['loss_center'].mean()
-        dloss = discrep(p1, p2)
+        dloss = harden(p)
 
-        loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 - dloss
+        loss = loss_cls + loss_box + loss_center - dloss
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer.step()
         freeze(model, "bottom", True)
-        del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2, loss_dict, loss_dict2
+        del loss_cls, loss_box, loss_center, loss_dict, 
         
         # Train Bottom
         freeze(model, "top", False)
-        for j in range(5):
+        for j in range(1):
             optimizer2.zero_grad()
-            loss_dict2, loss_dict, _, _ = model(images.tensors, targets=targets, r=r)
+            loss_dict, _ = model(images.tensors, targets=targets, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
             loss_box = loss_dict['loss_box'].mean()
             loss_center = loss_dict['loss_center'].mean()
             
-            loss_cls2 = loss_dict2['loss_cls'].mean()
-            loss_box2 = loss_dict2['loss_box'].mean()
-            loss_center2 = loss_dict2['loss_center'].mean()
-            _, _, p1, p2 = model(target_images.tensors, targets=target_targets, r=r)
-            dloss = discrep(p1, p2)
-            loss = loss_cls + loss_box + loss_center + loss_cls2 + loss_box2 + loss_center2 + dloss
+            _, p = model(target_images.tensors, targets=target_targets, r=r)
+            dloss = harden(p)
+            loss = loss_cls + loss_box + loss_center + dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             optimizer2.step()
-            del loss_cls, loss_box, loss_center,  loss_cls2, loss_box2, loss_center2, loss_dict2
+            del loss_cls, loss_box, loss_center
             if j != 4:
                 del loss_dict
         freeze(model, "top", True)
@@ -207,8 +204,6 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
                     f'avg: {avg:.4f}'
                 )
             )
-        if i == 1000:
-            break
         i+= 1
 
 

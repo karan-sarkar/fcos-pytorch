@@ -35,7 +35,7 @@ def get_args():
     args.post_top_n = 100
     args.min_size = 0
     args.fpn_strides = [8, 16, 32, 64, 128]
-    args.gamma = 1.0
+    args.gamma = 2.0
     args.alpha = 0.25
     args.sizes = [[-1, 64], [64, 128], [128, 256], [256, 512], [512, 100000000]]
     args.train_min_size_range = (640, 800)
