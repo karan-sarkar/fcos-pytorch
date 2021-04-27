@@ -105,7 +105,7 @@ def freeze(model, section, on):
 
 focal_loss = SigmoidFocalLoss(2.0, 0.25)
 
-def harden(cls_pred)
+def harden(cls_pred):
     cls_flat = flatten(cls_pred)
     clusters = (cls_pred.max(-1)[0] > 0.05).int() * cls_pred.argmax(-1)
     return focal_loss(cls_flat, clusters)
