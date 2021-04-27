@@ -179,8 +179,6 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             optimizer2.step()
             del loss_cls, loss_box, loss_center
-            if j != 4:
-                del loss_dict
         freeze(model, "top", True)
         
         loss_reduced = reduce_loss_dict(loss_dict)
