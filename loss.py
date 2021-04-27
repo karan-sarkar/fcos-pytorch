@@ -66,6 +66,7 @@ class SigmoidFocalLoss(nn.Module):
         self.alpha = alpha
 
     def forward(self, out, target):
+        print(out.shape, target.shape)
         n_class = out.shape[1]
         class_ids = torch.arange(
             1, n_class + 1, dtype=target.dtype, device=target.device

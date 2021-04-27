@@ -108,6 +108,7 @@ focal_loss = SigmoidFocalLoss(2.0, 0.25)
 def harden(cls_pred):
     cls_flat = flatten(cls_pred)
     clusters = (cls_flat.sigmoid().max(-1)[0] > 0.05).int() * cls_flat.argmax(-1)
+    print(clusters)
     return focal_loss(cls_flat, clusters)
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
