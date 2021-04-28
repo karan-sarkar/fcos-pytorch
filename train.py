@@ -179,7 +179,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         
         # Train Bottom
         freeze(model, "top", False)
-        for j in range(1):
+        for j in range(2):
             optimizer2.zero_grad()
             loss_dict, _ = model(images.tensors, targets=targets, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
