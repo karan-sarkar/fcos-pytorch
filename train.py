@@ -105,7 +105,7 @@ def freeze(model, section, on):
 
 focal_loss = SigmoidFocalLoss(2.0, 0.25)
 
-def harden(cls_pred):
+def harden(cls_pred, device):
     batch = cls_pred[0].shape[0]
     loss = 0
     hits = 0
@@ -116,7 +116,7 @@ def harden(cls_pred):
             maxs = cls_p.sigmoid().max(-1)[0]
             top_n = (maxs > 0.05).sum().clamp(max = 100)
             idx = maxs.topk(top_n)[1]
-            clusters = torch.zeros(cls_p.size(0)).int()
+            clusters = torch.zeros(cls_p.size(0)).int().to(device)
             clusters[idx] = ((cls_p.argmax(-1) + 1)[idx]).int()
             pos_id = torch.nonzero(clusters > 0).squeeze(1)
             hits += pos_id.numel()
@@ -168,7 +168,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
         
-        dloss = harden(p)
+        dloss = harden(p, device)
 
         loss = loss_cls + loss_box + loss_center - dloss
         loss.backward()
@@ -187,7 +187,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
             loss_center = loss_dict['loss_center'].mean()
             
             _, p = model(target_images.tensors, targets=target_targets, r=r)
-            dloss = harden(p)
+            dloss = harden(p, device)
             loss = loss_cls + loss_box + loss_center + dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
