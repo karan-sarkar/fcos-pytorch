@@ -113,12 +113,11 @@ def harden(cls_pred):
         for i in range(batch):
             cls_p = cls_flat[i]
             cls_p = cls_p.view(10, -1).transpose(0, 1)
-            print(cls_p.shape)
             maxs = cls_p.sigmoid().max(-1)[0]
             top_n = (maxs > 0.05).sum().clamp(max = 100)
             idx = maxs.topk(top_n)[1]
             clusters = torch.zeros(cls_p.size(0)).int()
-            clusters[idx] = (cls_p.argmax(-1) + 1)[idx]
+            clusters[idx] = ((cls_p.argmax(-1) + 1)[idx]).int()
             pos_id = torch.nonzero(clusters > 0).squeeze(1)
             hits += pos_id.numel()
             loss += focal_loss(cls_p, clusters) 
