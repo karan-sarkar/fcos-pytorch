@@ -112,6 +112,7 @@ def harden(cls_pred):
     for cls_flat in cls_pred:
         for i in range(batch):
             cls_p = cls_flat[i]
+            cls_p = cls_p.view(10, -1).transpose(0, 1)
             print(cls_p.shape)
             maxs = cls_p.sigmoid().max(-1)[0]
             top_n = (maxs > 0.05).sum().clamp(max = 100)
