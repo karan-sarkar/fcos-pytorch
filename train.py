@@ -107,10 +107,22 @@ focal_loss = SigmoidFocalLoss(2.0, 0.25)
 
 def harden(cls_pred):
     batch = cls_pred[0].shape[0]
-    cls_flat = flatten(cls_pred)
-    clusters = (cls_flat.sigmoid().max(-1)[0] > 0.05).int() * (cls_flat.argmax(-1) + 1)
-    pos_id = torch.nonzero(clusters > 0).squeeze(1)
-    return focal_loss(cls_flat, clusters) / (pos_id.numel() + batch)
+    loss = 0
+    hits = 0
+    for cls_flat in cls_pred:
+        for i in range(batch):
+            cls_p = cls_flat[i]
+            print(cls_p.shape)
+            maxs = cls_p.sigmoid().max(-1)[0]
+            top_n = (maxs > 0.05).sum().clamp(max = 100)
+            idx = maxs.topk(top_n)[1]
+            clusters = torch.zeros(cls_p.size(0)).int()
+            clusters[idx] = (cls_p.argmax(-1) + 1)[idx]
+            pos_id = torch.nonzero(clusters > 0).squeeze(1)
+            hits += pos_id.numel()
+            loss += focal_loss(cls_p, clusters) 
+    return loss / (hits + batch)
+    
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
     model.train()
