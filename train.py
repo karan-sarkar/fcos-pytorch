@@ -66,7 +66,7 @@ def valid(args, epoch, loader, dataset, m, device):
         images = images.to(device)
         targets = [target.to(device) for target in targets]
 
-        pred, _ = model(images.tensors, image_sizes=images.sizes)
+        pred = model(images.tensors, image_sizes=images.sizes)
 
         pred = [p.to('cpu') for p in pred]
 
