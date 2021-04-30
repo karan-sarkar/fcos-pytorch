@@ -311,13 +311,13 @@ if __name__ == '__main__':
             model = model.module
         if not isinstance(model, nn.DataParallel):
             model = nn.DataParallel(model)
-    model = model.to(device)
     else:
         args.ckpt = 0
     for g in optimizer.param_groups:
         g['lr'] = args.lr
     for g in optimizer2.param_groups:
         g['lr'] = args.lr2
+    model = model.to(device)
     
     for epoch in range(args.epoch):
         train(args, epoch, source_loader, target_loader, model, optimizer, optimizer2, device)
