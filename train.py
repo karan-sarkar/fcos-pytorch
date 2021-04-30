@@ -115,7 +115,7 @@ def harden(cls_pred, device):
             cls_p = cls_p.view(10, -1).transpose(0, 1)
             maxs = cls_p.sigmoid().max(-1)[0]
             top_n = (maxs > 0.05).sum().clamp(max = 100)
-            idx = maxs.topk(100)[1]
+            idx = maxs.topk(1)[1]
             clusters = torch.zeros(cls_p.size(0)).int().to(device)
             clusters[idx] = ((cls_p.argmax(-1) + 1)[idx]).int()
             pos_id = torch.nonzero(clusters > 0).squeeze(1)
