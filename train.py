@@ -123,7 +123,7 @@ def harden(cls_pred, device):
             pos_id = torch.nonzero(clusters > 0).squeeze(1)
             hits += clusters.numel()
             loss += focal_loss(cls_p, clusters) 
-    return 10 * loss / (hits)
+    return 10 * loss / (hits + batch)
     
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
