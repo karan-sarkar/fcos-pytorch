@@ -311,7 +311,7 @@ if __name__ == '__main__':
             model = model.module
         if not isinstance(model, nn.DataParallel):
             model = nn.DataParallel(model)
-        model = model.to(device)
+    model = model.to(device)
     else:
         args.ckpt = 0
     for g in optimizer.param_groups:
