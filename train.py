@@ -119,9 +119,9 @@ def harden(cls_pred, device):
             clusters = torch.zeros(cls_p.size(0)).int().to(device)
             clusters[idx] = ((cls_p.argmax(-1) + 1)[idx]).int()
             pos_id = torch.nonzero(clusters > 0).squeeze(1)
-            hits += pos_id.numel()
+            hits += clusters.numel()
             loss += focal_loss(cls_p, clusters) 
-    return loss / (hits + batch)
+    return loss / (hits)
     
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
@@ -308,8 +308,8 @@ if __name__ == '__main__':
         (model, optimizer, optimizer2) = torch.load('fcos_' + str(args.ckpt) + '.pth')
         if isinstance(model, nn.DataParallel):
             model = model.module
-        #if not isinstance(model, nn.DataParallel):
-            #model = nn.DataParallel(model)
+        if not isinstance(model, nn.DataParallel):
+            model = nn.DataParallel(model)
         model = model.to(device)
     else:
         args.ckpt = 0

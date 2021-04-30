@@ -197,8 +197,8 @@ class FCOS(nn.Module):
         self.apply(freeze_bn)
 
     def forward(self, input, image_sizes=None, targets=None, r = None):
-        #if r is not None and targets is not None:
-            #targets = [targets[int(i)].to(input.device) for i in r.tolist()]
+        if r is not None and targets is not None:
+            targets = [targets[int(i)].to(input.device) for i in r.tolist()]
         self.to(input.device)
         features = self.backbone(input)
         features1 = self.fpn1(features)
