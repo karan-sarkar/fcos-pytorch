@@ -119,7 +119,7 @@ def harden(cls_pred, device):
             clusters = torch.zeros(cls_p.size(0)).int().to(device)
             clusters[idx] = ((cls_p.argmax(-1) + 1)[idx]).int()
             pos_id = torch.nonzero(clusters > 0).squeeze(1)
-            hits += cluster.numel()
+            hits += clusters.numel()
             loss += focal_loss(cls_p, clusters) 
     return 10 * loss / (hits)
     
