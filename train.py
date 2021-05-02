@@ -112,7 +112,7 @@ def harden(cls_pred, device):
     return focal_loss(cls_p, clusters) / cls_p.size(0)
     
 
-def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, device):
+def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, optimizer3, device):
     model.train()
 
     if get_rank() == 0:
@@ -168,7 +168,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         # Train Bottom
         freeze(model, "top", False)
         for j in range(3):
-            optimizer2.zero_grad()
+            optimizer3.zero_grad()
             #loss_dict, _ = model(images.tensors, targets=targets, r=r)
             #loss_cls = loss_dict['loss_cls'].mean()
             #loss_box = loss_dict['loss_box'].mean()
@@ -179,7 +179,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
             loss = dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
-            optimizer2.step()
+            optimizer3.step()
             #del loss_cls, loss_box, loss_center
         freeze(model, "top", True)
         
@@ -193,7 +193,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         del loss_dict, loss_reduced
         
         if i % 100 == 0:
-            torch.save((model, optimizer, optimizer2), 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+            torch.save((model, optimizer, optimizer2, optimizer3), 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
 
         if get_rank() == 0:
             pbar.set_description(
@@ -255,6 +255,14 @@ if __name__ == '__main__':
         weight_decay=args.l22,
         nesterov=True,
     )
+    
+    optimizer3 = optim.SGD(
+        model.parameters(),
+        lr=args.lr2,
+        momentum=0.9,
+        weight_decay=args.l22,
+        nesterov=True,
+    )
     scheduler = optim.lr_scheduler.MultiStepLR(
         optimizer, milestones=[16, 22], gamma=0.1
     )
@@ -294,7 +302,7 @@ if __name__ == '__main__':
     )
     
     if args.ckpt is not None:
-        (model, optimizer, optimizer2) = torch.load('fcos_' + str(args.ckpt) + '.pth')
+        (model, optimizer, optimizer2, optimizer3) = torch.load('fcos_' + str(args.ckpt) + '.pth')
         if isinstance(model, nn.DataParallel):
             model = model.module
         if not isinstance(model, nn.DataParallel):
@@ -305,11 +313,13 @@ if __name__ == '__main__':
         g['lr'] = args.lr
     for g in optimizer2.param_groups:
         g['lr'] = args.lr2
+    for g in optimizer3.param_groups:
+        g['lr'] = args.lr2
     model = model.to(device)
     
     for epoch in range(args.epoch):
         train(args, epoch, source_loader, target_loader, model, optimizer, optimizer2, device)
-        torch.save((model, optimizer, optimizer2), 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        torch.save((model, optimizer, optimizer2, optimizer3), 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         scheduler.step()
