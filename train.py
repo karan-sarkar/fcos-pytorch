@@ -149,7 +149,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         
         # Train Top
         freeze(model, "bottom", False)
-        optimizer.zero_grad()
+        optimizer2.zero_grad()
         loss_dict, _ = model(images.tensors, targets=targets, r=r)
         _, p = model(target_images.tensors, targets=target_targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
@@ -161,7 +161,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, devi
         loss = loss_cls + loss_box + loss_center - dloss
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
-        optimizer.step()
+        optimizer2.step()
         freeze(model, "bottom", True)
         del loss_cls, loss_box, loss_center,  
         
