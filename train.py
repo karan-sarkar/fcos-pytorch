@@ -163,24 +163,24 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, opti
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer2.step()
         freeze(model, "bottom", True)
-        del loss_cls, loss_box, loss_center,  
+        del loss_cls, loss_box, loss_center, loss_dict
         
         # Train Bottom
         freeze(model, "top", False)
         for j in range(3):
             optimizer3.zero_grad()
-            #loss_dict, _ = model(images.tensors, targets=targets, r=r)
-            #loss_cls = loss_dict['loss_cls'].mean()
-            #loss_box = loss_dict['loss_box'].mean()
-            #loss_center = loss_dict['loss_center'].mean()
+            loss_dict, _ = model(images.tensors, targets=targets, r=r)
+            loss_cls = loss_dict['loss_cls'].mean()
+            loss_box = loss_dict['loss_box'].mean()
+            loss_center = loss_dict['loss_center'].mean()
             
             _, p = model(target_images.tensors, targets=target_targets, r=r)
             dloss = harden(p, device)
-            loss = dloss
+            loss = loss_cls + loss_box + loss_center + dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             optimizer3.step()
-            #del loss_cls, loss_box, loss_center
+            del loss_cls, loss_box, loss_center
         freeze(model, "top", True)
         
         loss_reduced = reduce_loss_dict(loss_dict)
