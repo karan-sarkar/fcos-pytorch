@@ -108,7 +108,7 @@ focal_loss = SigmoidFocalLoss(2.0, 0.25)
 def harden(cls_pred, device):
     batch = cls_pred[0].shape[0]
     cls_p = flatten(cls_pred)
-    clusters = ((cls_p.sigmoid().max(-1)[0] > 0.05).int() * (cls_p.argmax(-1) + 1).int()
+    clusters = (cls_p.sigmoid().max(-1)[0] > 0.05).int() * (cls_p.argmax(-1) + 1).int()
     return focal_loss(cls_p, clusters) / cls_p.size(0)
     
 
