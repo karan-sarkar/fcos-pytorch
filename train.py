@@ -50,9 +50,9 @@ def valid(args, epoch, loader, dataset, m, device):
     torch.cuda.empty_cache()
     
     if isinstance(m, nn.DataParallel):
-        model = m
+        model = m.module
     else:
-        model = nn.DataParallel(m)
+        model = m
 
     model.eval()
 
@@ -293,13 +293,13 @@ if __name__ == '__main__':
     )
     source_valid_loader = DataLoader(
         source_valid_set,
-        batch_size=args.batch,
+        batch_size=args.batch_val,
         shuffle = True,
         collate_fn=collate_fn(args),
     )
     target_valid_loader = DataLoader(
         target_valid_set,
-        batch_size=args.batch,
+        batch_size=args.batch_val,
         shuffle = True,
         collate_fn=collate_fn(args),
     )

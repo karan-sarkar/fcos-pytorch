@@ -10,6 +10,7 @@ def get_argparser():
     parser.add_argument('--l2', type=float, default=0.0001)
     parser.add_argument('--l22', type=float, default=0.00001)
     parser.add_argument('--batch', type=int, default=16)
+    parser.add_argument('--batch_val', type=int, default=16)
     parser.add_argument('--epoch', type=int, default=24)
     parser.add_argument('--n_save_sample', type=int, default=5)
     parser.add_argument('--ckpt', type=int)
