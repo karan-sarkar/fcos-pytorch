@@ -18,6 +18,11 @@ class FCOSPostprocessor(nn.Module):
     def forward_single_feature_map(
         self, location, cls_pred, box_pred, center_pred, image_sizes
     ):
+        print(location.shape)
+        print(cls_pred.shape)
+        print(box_pred.shape)
+        print(center_pred.shape)
+        print(image_sizes.shape)
         batch, channel, height, width = cls_pred.shape
 
         cls_pred = cls_pred.view(batch, channel, height, width).permute(0, 2, 3, 1)
