@@ -18,15 +18,10 @@ class FCOSPostprocessor(nn.Module):
     def forward_single_feature_map(
         self, location, cls_pred, box_pred, center_pred, image_sizes
     ):
-        print(location.shape)
-        print(cls_pred.shape)
-        print(box_pred.shape)
-        print(center_pred.shape)
-        print(image_sizes.shape)
         batch, channel, height, width = cls_pred.shape
 
         cls_pred = cls_pred.view(batch, channel, height, width).permute(0, 2, 3, 1)
-        cls_pred = cls_pred.reshape(batch, -1, channel).sigmoid()
+        cls_pred = cls_pred.reshape(batch, -1, channel).sigmoid().contiguous()
 
         box_pred = box_pred.view(batch, 4, height, width).permute(0, 2, 3, 1)
         box_pred = box_pred.reshape(batch, -1, 4)
@@ -35,6 +30,8 @@ class FCOSPostprocessor(nn.Module):
         center_pred = center_pred.reshape(batch, -1).sigmoid()
 
         candid_ids = cls_pred > self.threshold
+        print(cls_pred.shape)
+        print(candid_ids.shape)
         top_ns = candid_ids.view(batch, -1).sum(1)
         top_ns = top_ns.clamp(max=self.top_n)
 
