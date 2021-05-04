@@ -65,8 +65,9 @@ def valid(args, epoch, loader, dataset, m, device):
 
         images = images.to(device)
         targets = [target.to(device) for target in targets]
-
-        pred = model(images.tensors, image_sizes=images.sizes)
+        r = torch.range(0, len(targets) - 1).to(device)
+        
+        pred = model(images.tensors, image_sizes=images.sizes, r=r)
 
         pred = [p.to('cpu') for p in pred]
 
@@ -320,10 +321,10 @@ if __name__ == '__main__':
     model = model.to(device)
     
     for epoch in range(args.epoch):
-        train(args, epoch, source_loader, target_loader, model, optimizer, optimizer2, optimizer3, device)
-        torch.save((model, optimizer, optimizer2, optimizer3), 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        train(args, epoch, source_loader, target_loader, model, optimizer, optimizer2, optimizer3, device)
+        torch.save((model, optimizer, optimizer2, optimizer3), 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         scheduler.step()
 
 
