@@ -306,8 +306,8 @@ if __name__ == '__main__':
     
     if args.ckpt is not None:
         (model, optimizer, optimizer2, optimizer3) = torch.load('fcos_' + str(args.ckpt) + '.pth')
-        if isinstance(model, nn.DataParallel):
-            model = model.module
+        #if isinstance(model, nn.DataParallel):
+            #model = model.module
         if not isinstance(model, nn.DataParallel):
             model = nn.DataParallel(model)
     else:
