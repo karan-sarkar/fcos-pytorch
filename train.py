@@ -321,10 +321,10 @@ if __name__ == '__main__':
     model = model.to(device)
     
     for epoch in range(args.epoch):
-        valid(args, epoch, source_valid_loader, source_valid_set, model, device)
-        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         train(args, epoch, source_loader, target_loader, model, optimizer, optimizer2, optimizer3, device)
         torch.save((model, optimizer, optimizer2, optimizer3), 'fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        valid(args, epoch, source_valid_loader, source_valid_set, model, device)
+        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         scheduler.step()
 
 
