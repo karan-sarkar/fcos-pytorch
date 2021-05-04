@@ -50,9 +50,9 @@ def valid(args, epoch, loader, dataset, m, device):
     torch.cuda.empty_cache()
     
     if isinstance(m, nn.DataParallel):
-        model = m.module
-    else:
         model = m
+    else:
+        model = nn.DataParallel(m)
 
     model.eval()
 
