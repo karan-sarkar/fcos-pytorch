@@ -204,6 +204,8 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, opti
                     f'avg: {avg:.4f}'
                 )
             )
+        if i == 2000:
+            break
         i+= 1
 
 
