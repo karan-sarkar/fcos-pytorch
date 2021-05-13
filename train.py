@@ -112,13 +112,12 @@ def harden(cls_pred, device):
     batch = cls_pred[0].shape[0]
     cls_p = flatten(cls_pred)
     clusters = (cls_p.sigmoid().max(-1)[0] > 0.05).long() * (cls_p.argmax(-1) + 1).long()
-    print(clusters, clusters.shape)
     clusters = F.one_hot(clusters, 11)[:, 1:]
     
     return l1loss(cls_p, clusters)
     
 
-def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, optimizer3, device):
+def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
 
     if get_rank() == 0:
@@ -131,7 +130,8 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, opti
     losses = []
     for (images, targets, _), (target_images, target_targets, _) in zip(pbar, target_loader):
         
-        optimizer.zero_grad()
+        c_opt.zero_grad()
+        g_opt.zero_grad()
         
         # Train Bottom + Top
         
@@ -150,12 +150,12 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, opti
         loss = loss_cls + loss_box + loss_center 
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
-        optimizer.step()
+        c_opt.step()
+        g_opt.step()
         del loss_cls, loss_box, loss_center, loss_dict
         
         # Train Top
-        freeze(model, "bottom", False)
-        optimizer2.zero_grad()
+        c_opt.zero_grad()
         loss_dict, _ = model(images.tensors, targets=targets, r=r)
         _, p = model(target_images.tensors, targets=target_targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
@@ -167,14 +167,12 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, opti
         loss = loss_cls + loss_box + loss_center - dloss
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
-        optimizer2.step()
-        freeze(model, "bottom", True)
+        c_opt.step()
         del loss_cls, loss_box, loss_center, loss_dict
         
         # Train Bottom
-        freeze(model, "top", False)
         for j in range(3):
-            optimizer3.zero_grad()
+            g_opt.zero_grad()
             loss_dict, _ = model(images.tensors, targets=targets, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
             loss_box = loss_dict['loss_box'].mean()
@@ -185,9 +183,8 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, opti
             loss = loss_cls + loss_box + loss_center + dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
-            optimizer3.step()
+            g_opt.step()
             del loss_cls, loss_box, loss_center
-        freeze(model, "top", True)
         
         loss_reduced = reduce_loss_dict(loss_dict)
         loss_cls = loss_reduced['loss_cls'].mean().item()
@@ -199,7 +196,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, opti
         del loss_dict, loss_reduced
         
         if i % 100 == 0:
-            torch.save((model, optimizer, optimizer2, optimizer3), 'mini_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+            torch.save((model, c_opt, g_opt), 'mini_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
 
         if get_rank() == 0:
             pbar.set_description(
@@ -247,33 +244,25 @@ if __name__ == '__main__':
     model = FCOS(args, backbone)
     model = nn.DataParallel(model)
     
+    bottom = [p for n, p in model.named_parameters() if ('fpn' not in n and 'head' not in n)]
+    top = [p for n, p in model.named_parameters() if ('fpn' in n or 'head' in n)]
 
-    optimizer = optim.SGD(
-        model.parameters(),
+    g_opt = optim.SGD(
+        bottom,
         lr=args.lr,
         momentum=0.9,
         weight_decay=args.l2,
         nesterov=True,
     )
     
-    optimizer2 = optim.SGD(
-        model.parameters(),
+    c_opt = optim.SGD(
+        top,
         lr=args.lr2,
         momentum=0.9,
         weight_decay=args.l22,
         nesterov=True,
     )
     
-    optimizer3 = optim.SGD(
-        model.parameters(),
-        lr=args.lr2,
-        momentum=0.9,
-        weight_decay=args.l22,
-        nesterov=True,
-    )
-    scheduler = optim.lr_scheduler.MultiStepLR(
-        optimizer, milestones=[16, 22], gamma=0.1
-    )
 
     if args.distributed:
         model = nn.parallel.DistributedDataParallel(
@@ -310,24 +299,22 @@ if __name__ == '__main__':
     )
     
     if args.ckpt is not None:
-        (model, optimizer, optimizer2, optimizer3) = torch.load('mini_fcos_' + str(args.ckpt) + '.pth')
+        (model, c_opt, g_opt) = torch.load('mini_fcos_' + str(args.ckpt) + '.pth')
         #if isinstance(model, nn.DataParallel):
             #model = model.module
         if not isinstance(model, nn.DataParallel):
             model = nn.DataParallel(model)
     else:
         args.ckpt = 0
-    for g in optimizer.param_groups:
+    for g in c_opt.param_groups:
         g['lr'] = args.lr
-    for g in optimizer2.param_groups:
-        g['lr'] = args.lr2
-    for g in optimizer3.param_groups:
+    for g in g_opt.param_groups:
         g['lr'] = args.lr2
     model = model.to(device)
     
     for epoch in range(args.epoch):
-        train(args, epoch, source_loader, target_loader, model, optimizer, optimizer2, optimizer3, device)
-        torch.save((model, optimizer, optimizer2, optimizer3), 'mini_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
+        torch.save((model, c_opt, g_opt), 'mini_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         scheduler.step()
