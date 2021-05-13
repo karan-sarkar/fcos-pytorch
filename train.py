@@ -111,9 +111,9 @@ l1loss = nn.L1Loss()
 def harden(cls_pred, device):
     batch = cls_pred[0].shape[0]
     cls_p = flatten(cls_pred)
-    n_class = cls_p.size(-1) + 1
-    clusters = (cls_p.sigmoid().max(-1)[0] > 0.05).int() * (cls_p.argmax(-1) + 1).int()
-    clusters = F.one_hot(clusters, n_class)[:, 1:]
+    clusters = (cls_p.sigmoid().max(-1)[0] > 0.05).long() * (cls_p.argmax(-1) + 1).long()
+    print(clusters, clusters.shape)
+    clusters = F.one_hot(clusters, 11)[:, 1:]
     
     return l1loss(cls_p, clusters)
     
