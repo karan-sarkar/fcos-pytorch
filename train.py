@@ -110,8 +110,8 @@ l1loss = nn.L1Loss()
 
 def harden(cls_pred, device):
     batch = cls_pred[0].shape[0]
-    cls_p = flatten(cls_pred)
-    clusters = (cls_p.sigmoid().max(-1)[0] > 0.05).long() * (cls_p.argmax(-1) + 1).long()
+    cls_p = flatten(cls_pred).sigmoid()
+    clusters = (cls_p.max(-1)[0] > 0.05).long() * (cls_p.argmax(-1) + 1).long()
     clusters = F.one_hot(clusters, 11)[:, 1:]
     
     return l1loss(cls_p, clusters)
@@ -171,7 +171,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         del loss_cls, loss_box, loss_center, loss_dict
         
         # Train Bottom
-        for j in range(4):
+        for j in range(3):
             g_opt.zero_grad()
             loss_dict, _ = model(images.tensors, targets=targets, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
