@@ -3,6 +3,7 @@ import os
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader, sampler
+import torch.nn.functional as F
 from tqdm import tqdm
 
 from loss import SigmoidFocalLoss
@@ -105,12 +106,16 @@ def freeze(model, section, on):
         i += 1
 
 focal_loss = SigmoidFocalLoss(2.0, 0.25)
+l1loss = nn.L1Loss()
 
 def harden(cls_pred, device):
     batch = cls_pred[0].shape[0]
     cls_p = flatten(cls_pred)
+    n_class = cls_p.size(-1) + 1
     clusters = (cls_p.sigmoid().max(-1)[0] > 0.05).int() * (cls_p.argmax(-1) + 1).int()
-    return focal_loss(cls_p, clusters) / cls_p.size(0)
+    clusters = F.one_hot(clusters, n_class)[:, 1:]
+    
+    return l1loss(cls_p, clusters)
     
 
 def train(args, epoch, loader, target_loader, model, optimizer, optimizer2, optimizer3, device):
