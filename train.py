@@ -157,18 +157,24 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         # Train Top
         c_opt.zero_grad()
         loss_dict, _ = model(images.tensors, targets=targets, r=r)
-        _, p = model(target_images.tensors, targets=target_targets, r=r)
+        loss_dict2, p = model(target_images.tensors, targets=target_targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
         
         dloss = harden(p, device)
+        
+        loss_reduced = reduce_loss_dict(loss_dict)
+        loss_cls_target = loss_reduced['loss_cls'].mean().item()
+        loss_box_target = loss_reduced['loss_box'].mean().item()
+        loss_center_target = loss_reduced['loss_center'].mean().item()
+        
 
         loss = loss_cls + loss_box + loss_center - dloss
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         c_opt.step()
-        del loss_cls, loss_box, loss_center, loss_dict
+        del loss_cls, loss_box, loss_center, loss_dict, loss_dict2, loss_reduced
         
         # Train Bottom
         for j in range(4):
@@ -201,8 +207,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         if get_rank() == 0:
             pbar.set_description(
                 (
-                    f'epoch: {epoch + 1}; cls: {loss_cls:.4f}; '
-                    f'box: {loss_box:.4f}; center: {loss_center:.4f}'
+                    f'epoch: {epoch + 1}; cls: {loss_cls:.4f}; target_cls: {loss_cls_target:.4f};'
+                    f'box: {loss_box:.4f}; target_box: {loss_box_target:.4f}; center: {loss_center:.4f}; target_center: {loss_center_target:.4f};'
                     f'discrepancy: {discrep_loss:.4f}'
                     f'avg: {avg:.4f}'
                 )
