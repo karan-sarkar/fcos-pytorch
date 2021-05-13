@@ -171,7 +171,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         del loss_cls, loss_box, loss_center, loss_dict
         
         # Train Bottom
-        for j in range(3):
+        for j in range(4):
             g_opt.zero_grad()
             loss_dict, _ = model(images.tensors, targets=targets, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
@@ -207,8 +207,6 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                     f'avg: {avg:.4f}'
                 )
             )
-        if i == 2000:
-            break
         i+= 1
 
 
@@ -317,6 +315,5 @@ if __name__ == '__main__':
         torch.save((model, c_opt, g_opt), 'mini_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
-        scheduler.step()
 
 
