@@ -118,11 +118,6 @@ def harden(cls_pred, device):
     mx = F.one_hot(mx, 10)
     return (torch.mean(torch.abs(cls_p -  mx), 1) * mask).mean()
     
-    clusters = (cls_p.max(-1)[0] > 0.05).long() * (cls_p.argmax(-1) + 1).long()
-    clusters = F.one_hot(clusters, 11)[:, 1:]
-    
-    return l1loss(cls_p, clusters)
-    
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
