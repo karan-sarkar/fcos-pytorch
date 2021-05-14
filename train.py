@@ -111,6 +111,13 @@ l1loss = nn.L1Loss()
 def harden(cls_pred, device):
     batch = cls_pred[0].shape[0]
     cls_p = flatten(cls_pred).sigmoid()
+    
+    
+    mx = torch.argmax(cls_p, 1)
+    mask = cls_p.max(1)[0].ge(0.05).float()
+    mx = F.one_hot(mx, 10)
+    return (torch.mean(torch.abs(cls_p -  mx), 1) * mask).mean()
+    
     clusters = (cls_p.max(-1)[0] > 0.05).long() * (cls_p.argmax(-1) + 1).long()
     clusters = F.one_hot(clusters, 11)[:, 1:]
     
