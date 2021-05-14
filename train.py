@@ -203,7 +203,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         if i % 100 == 0:
             torch.save((model, c_opt, g_opt), 'mini_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
-
+    
         if get_rank() == 0:
             pbar.set_description(
                 (
@@ -214,6 +214,9 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                 )
             )
         i+= 1
+        
+        if i == 2000:
+            break
 
 
 def data_sampler(dataset, shuffle, distributed):
@@ -317,9 +320,10 @@ if __name__ == '__main__':
     model = model.to(device)
     
     for epoch in range(args.epoch):
-        train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
-        torch.save((model, c_opt, g_opt), 'mini_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
+        torch.save((model, c_opt, g_opt), 'mini_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        
 
 
