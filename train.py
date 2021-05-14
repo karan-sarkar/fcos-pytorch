@@ -164,7 +164,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         dloss = harden(p, device)
         
-        loss_reduced = reduce_loss_dict(loss_dict)
+        loss_reduced = reduce_loss_dict(loss_dict2)
         loss_cls_target = loss_reduced['loss_cls'].mean().item()
         loss_box_target = loss_reduced['loss_box'].mean().item()
         loss_center_target = loss_reduced['loss_center'].mean().item()
@@ -174,23 +174,24 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         c_opt.step()
-        del loss_cls, loss_box, loss_center, loss_dict, loss_dict2, loss_reduced
+        del loss_cls, loss_box, loss_center, loss_dict2, loss_reduced
         
         # Train Bottom
         for j in range(4):
             g_opt.zero_grad()
-            loss_dict, _ = model(images.tensors, targets=targets, r=r)
-            loss_cls = loss_dict['loss_cls'].mean()
-            loss_box = loss_dict['loss_box'].mean()
-            loss_center = loss_dict['loss_center'].mean()
+            #loss_dict, _ = model(images.tensors, targets=targets, r=r)
+            #loss_cls = loss_dict['loss_cls'].mean()
+            #loss_box = loss_dict['loss_box'].mean()
+            #loss_center = loss_dict['loss_center'].mean()
             
             _, p = model(target_images.tensors, targets=target_targets, r=r)
             dloss = harden(p, device)
-            loss = loss_cls + loss_box + loss_center + dloss
+            #loss = loss_cls + loss_box + loss_center + dloss
+            loss = dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             g_opt.step()
-            del loss_cls, loss_box, loss_center
+            #del loss_cls, loss_box, loss_center
         
         loss_reduced = reduce_loss_dict(loss_dict)
         loss_cls = loss_reduced['loss_cls'].mean().item()
@@ -320,10 +321,10 @@ if __name__ == '__main__':
     model = model.to(device)
     
     for epoch in range(args.epoch):
-        valid(args, epoch, source_valid_loader, source_valid_set, model, device)
-        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
         torch.save((model, c_opt, g_opt), 'mini_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        valid(args, epoch, source_valid_loader, source_valid_set, model, device)
+        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         
 
 
