@@ -218,7 +218,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             )
         i+= 1
         
-        if i == 2000:
+        if i == 10000:
             break
 
 
