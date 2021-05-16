@@ -132,6 +132,9 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     losses = []
     for (images, targets, _), (target_images, target_targets, _) in zip(pbar, target_loader):
         
+        if target_images.size(0) != images.size(0):
+            break
+        
         c_opt.zero_grad()
         g_opt.zero_grad()
         
@@ -217,9 +220,6 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                 )
             )
         i+= 1
-        
-        if i == 10000:
-            break
 
 
 def data_sampler(dataset, shuffle, distributed):
