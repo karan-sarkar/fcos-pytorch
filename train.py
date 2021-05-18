@@ -250,7 +250,7 @@ if __name__ == '__main__':
     source_valid_set = COCODataset(args.path, 'val', preset_transform(args, train=False))
     target_valid_set = COCODataset(args.path2, 'val', preset_transform(args, train=False))
 
-    backbone = vovnet27_slim(pretrained=True)
+    backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
     model = nn.DataParallel(model)
     
