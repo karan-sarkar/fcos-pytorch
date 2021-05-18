@@ -208,7 +208,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         del loss_dict, loss_reduced
         
         if i % 100 == 0:
-            torch.save((model, c_opt, g_opt), 'mini_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+            torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
     
         if get_rank() == 0:
             pbar.set_description(
@@ -309,7 +309,7 @@ if __name__ == '__main__':
     )
     
     if args.ckpt is not None:
-        (model, c_opt, g_opt) = torch.load('mini_fcos_' + str(args.ckpt) + '.pth')
+        (model, c_opt, g_opt) = torch.load('slim_fcos_' + str(args.ckpt) + '.pth')
         #if isinstance(model, nn.DataParallel):
             #model = model.module
         if not isinstance(model, nn.DataParallel):
@@ -326,7 +326,7 @@ if __name__ == '__main__':
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
-        torch.save((model, c_opt, g_opt), 'mini_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         
        
         
