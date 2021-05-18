@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from loss import SigmoidFocalLoss
 from argument import get_args
-from backbone import vovnet57
+from backbone import vovnet57, vovnet27_slim
 from dataset import COCODataset, collate_fn
 from model import FCOS
 from transform import preset_transform
@@ -250,7 +250,7 @@ if __name__ == '__main__':
     source_valid_set = COCODataset(args.path, 'val', preset_transform(args, train=False))
     target_valid_set = COCODataset(args.path2, 'val', preset_transform(args, train=False))
 
-    backbone = vovnet57(pretrained=False)
+    backbone = vovnet27_slim(pretrained=True)
     model = FCOS(args, backbone)
     model = nn.DataParallel(model)
     
