@@ -254,8 +254,8 @@ if __name__ == '__main__':
     model = FCOS(args, backbone)
     model = nn.DataParallel(model)
     
-    bottom = [p for n, p in model.named_parameters() if ('fpn' not in n and 'head' not in n)]
-    top = [p for n, p in model.named_parameters() if ('fpn' in n or 'head' in n)]
+    bottom = [p for n, p in model.named_parameters() if ('head' not in n)]
+    top = [p for n, p in model.named_parameters() if ('head' in n)]
 
     g_opt = optim.SGD(
         bottom,
