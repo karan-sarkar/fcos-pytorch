@@ -116,7 +116,7 @@ def harden(cls_pred, device):
     mx = torch.argmax(cls_p, 1)
     mask = cls_p.max(1)[0].ge(0.05).float().detach()
     mx = F.one_hot(mx, 10)
-    return (torch.mean(torch.abs(cls_p -  mx), 1) * mask).sum() / (mask.sum() + 1)
+    return ((torch.mean(torch.abs(cls_p -  mx), 1) * mask).sum() / (mask.sum() + 1), float(mask.mean()))
     
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
@@ -167,7 +167,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
         
-        dloss = harden(p, device)
+        dloss, mask = harden(p, device)
         
         loss_reduced = reduce_loss_dict(loss_dict2)
         loss_cls_target = loss_reduced['loss_cls'].mean().item()
@@ -190,7 +190,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             #loss_center = loss_dict['loss_center'].mean()
             
             _, p = model(target_images.tensors, targets=target_targets, r=r)
-            dloss = harden(p, device)
+            dloss, _ = harden(p, device)
             #loss = loss_cls + loss_box + loss_center + dloss
             loss = dloss
             loss.backward()
@@ -216,6 +216,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                     f'epoch: {epoch + 1}; cls: {loss_cls:.4f}; target_cls: {loss_cls_target:.4f};'
                     f'box: {loss_box:.4f}; target_box: {loss_box_target:.4f}; center: {loss_center:.4f}; target_center: {loss_center_target:.4f};'
                     f'discrepancy: {discrep_loss:.4f}'
+                    f'mask: {mask:.4f}'
                     f'avg: {avg:.4f}'
                 )
             )
