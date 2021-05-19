@@ -116,7 +116,7 @@ def harden(cls_pred, device):
     mx = torch.argmax(cls_p, 1)
     mask = cls_p.max(1)[0].ge(0.05).float()
     mx = F.one_hot(mx, 10)
-    return (torch.mean(torch.abs(cls_p -  mx), 1) * mask).mean()
+    return (torch.mean(torch.abs(cls_p -  mx), 1) * mask).sum() / (mask.sum() + 1)
     
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
