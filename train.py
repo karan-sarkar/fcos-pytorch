@@ -183,7 +183,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         del loss_cls, loss_box, loss_center, loss_dict2, loss_reduced
         
         # Train Bottom
-        for j in range(4):
+        for j in range(6):
             g_opt.zero_grad()
             #loss_dict, _ = model(images.tensors, targets=targets, r=r)
             #loss_cls = loss_dict['loss_cls'].mean()
