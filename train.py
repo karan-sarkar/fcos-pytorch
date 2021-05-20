@@ -130,6 +130,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     
     i = 0
     losses = []
+    dlosses = []
     for (images, targets, _), (target_images, target_targets, _) in zip(pbar, target_loader):
         
         if len(targets) != len(target_targets):
@@ -204,7 +205,9 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         loss_center = loss_reduced['loss_center'].mean().item()
         discrep_loss = dloss.item()
         losses.append(loss_cls + loss_box + loss_center + discrep_loss)
+        dlosses.append(discrep_loss)
         avg = sum(losses) / len(losses)
+        davg = sum(dlosses) / len(dlosses)
         del loss_dict, loss_reduced
         
         if i % 100 == 0:
@@ -217,7 +220,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                     f'box: {loss_box:.4f}; target_box: {loss_box_target:.4f}; center: {loss_center:.4f}; target_center: {loss_center_target:.4f};'
                     f'discrepancy: {discrep_loss:.4f}'
                     f'mask: {mask:.4f}'
-                    f'avg: {avg:.4f}'
+                    f'avg: {avg:.4f}; discrep_avg: {davg:.4f}'
                 )
             )
         i+= 1
