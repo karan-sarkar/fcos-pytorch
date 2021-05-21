@@ -238,7 +238,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         
         discrep_loss = dloss.item()
-        losses.append(loss_cls + loss_box + loss_center + discrep_loss)
+        losses.append(cls + box + center + discrep_loss)
         dlosses.append(discrep_loss)
         avg = sum(losses) / len(losses)
         davg = sum(dlosses) / len(dlosses)
@@ -250,7 +250,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         if get_rank() == 0:
             pbar.set_description(
                 (
-                    f'epoch: {epoch + 1}; cls: {lcls:.4f}; target_cls: {loss_cls_target:.4f};'
+                    f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {loss_cls_target:.4f};'
                     f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
                     f'discrepancy: {discrep_loss:.4f}'
                     f'mask: {mask:.4f}'
