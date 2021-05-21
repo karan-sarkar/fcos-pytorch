@@ -217,7 +217,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         c_opt.step()
-        del loss_cls, loss_box, loss_center, loss_dict2, loss_reduced
+        del loss_dict2, loss_reduced
         
         # Train Bottom
         for j in range(4):
