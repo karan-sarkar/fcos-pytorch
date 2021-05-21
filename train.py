@@ -206,7 +206,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
 
         (loss_dict2, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
         
-        dloss, mask = compare(p, q) + compare(q, p)
+        dloss, mask = compare(p, q)
+        dloss += compare(q, p)[0]
         
         loss_reduced = reduce_loss_dict(loss_dict2)
         loss_cls_target = loss_reduced['loss_cls'].mean().item()
@@ -228,7 +229,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             #loss_center = loss_dict['loss_center'].mean()
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
-            dloss, mask = compare(p, q) + compare(q, p)
+            dloss, mask = compare(p, q)
+            dloss += compare(q, p)[0]
             #loss = loss_cls + loss_box + loss_center + dloss
             loss = dloss
             loss.backward()
