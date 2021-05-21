@@ -117,7 +117,17 @@ def harden(cls_pred, device):
     mask = cls_p.max(1)[0].ge(0.05).float()
     mx = F.one_hot(mx, 10) * mask.view(-1, 1)
     return ((torch.mean(torch.abs(cls_p -  mx), 1) * (9 * mask + 1)).mean(), float(mask.mean()))
+
+def compare(cls_pred1, cls_pred2):
+    batch = cls_pred1[0].shape[0]
+    cls_p1 = flatten(cls_pred1).sigmoid()
+    cls_p2 = flatten(cls_pred2).sigmoid()
     
+    
+    mx = torch.argmax(cls_p1, 1)
+    mask = cls_p1.max(1)[0].ge(0.05).float()
+    mx = F.one_hot(mx, 10) * mask.view(-1, 1)
+    return ((torch.mean(torch.abs(cls_p2 -  mx), 1) * (9 * mask + 1)).mean(), float(mask.mean()))
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -148,50 +158,77 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         target_targets = [target.to(device) for target in target_targets]
         r = torch.range(0, len(targets) - 1).to(device)
 
-        loss_dict, _ = model(images.tensors, targets=targets, r=r)
+        (loss_dict, _), (loss_dict2, _) = model(images.tensors, targets=targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
         
         loss = loss_cls + loss_box + loss_center 
+        del loss_cls, loss_box, loss_center, loss_dict
+        
+        loss_cls = loss_dict2['loss_cls'].mean()
+        loss_box = loss_dict2['loss_box'].mean()
+        loss_center = loss_dict2['loss_center'].mean()
+        
+        loss += loss_cls + loss_box + loss_center 
+        del loss_cls, loss_box, loss_center, loss_dict2
+        
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         c_opt.step()
         g_opt.step()
-        del loss_cls, loss_box, loss_center, loss_dict
+        
         
         # Train Top
         c_opt.zero_grad()
-        loss_dict, _ = model(images.tensors, targets=targets, r=r)
-        loss_dict2, p = model(target_images.tensors, targets=target_targets, r=r)
+        (loss_dict, _), (loss_dict2, _) = model(images.tensors, targets=targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
         
-        dloss, mask = harden(p, device)
+        loss = loss_cls + loss_box + loss_center 
+        
+
+        del loss_cls, loss_box, loss_center, loss_dict
+        
+        loss_cls = loss_dict2['loss_cls'].mean()
+        loss_box = loss_dict2['loss_box'].mean()
+        loss_center = loss_dict2['loss_center'].mean()
+        
+        loss += loss_cls + loss_box + loss_center 
+        
+        loss_reduced = reduce_loss_dict(loss_dict2)
+        cls = loss_reduced['loss_cls'].mean().item()
+        box = loss_reduced['loss_box'].mean().item()
+        center = loss_reduced['loss_center'].mean().item()
+        
+        del loss_cls, loss_box, loss_center, loss_dict2, loss_reduced
+
+        (loss_dict2, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
+        
+        dloss, mask = compare(p, q, device)
         
         loss_reduced = reduce_loss_dict(loss_dict2)
         loss_cls_target = loss_reduced['loss_cls'].mean().item()
         loss_box_target = loss_reduced['loss_box'].mean().item()
         loss_center_target = loss_reduced['loss_center'].mean().item()
         
-
-        loss = loss_cls + loss_box + loss_center - dloss
+        loss -= dloss
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         c_opt.step()
         del loss_cls, loss_box, loss_center, loss_dict2, loss_reduced
         
         # Train Bottom
-        for j in range(6):
+        for j in range(4):
             g_opt.zero_grad()
             #loss_dict, _ = model(images.tensors, targets=targets, r=r)
             #loss_cls = loss_dict['loss_cls'].mean()
             #loss_box = loss_dict['loss_box'].mean()
             #loss_center = loss_dict['loss_center'].mean()
             
-            _, p = model(target_images.tensors, targets=target_targets, r=r)
-            dloss, _ = harden(p, device)
+            (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
+            dloss, mask = compare(p, q, device)
             #loss = loss_cls + loss_box + loss_center + dloss
             loss = dloss
             loss.backward()
@@ -199,10 +236,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             g_opt.step()
             #del loss_cls, loss_box, loss_center
         
-        loss_reduced = reduce_loss_dict(loss_dict)
-        loss_cls = loss_reduced['loss_cls'].mean().item()
-        loss_box = loss_reduced['loss_box'].mean().item()
-        loss_center = loss_reduced['loss_center'].mean().item()
+        
         discrep_loss = dloss.item()
         losses.append(loss_cls + loss_box + loss_center + discrep_loss)
         dlosses.append(discrep_loss)
@@ -216,8 +250,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         if get_rank() == 0:
             pbar.set_description(
                 (
-                    f'epoch: {epoch + 1}; cls: {loss_cls:.4f}; target_cls: {loss_cls_target:.4f};'
-                    f'box: {loss_box:.4f}; target_box: {loss_box_target:.4f}; center: {loss_center:.4f}; target_center: {loss_center_target:.4f};'
+                    f'epoch: {epoch + 1}; cls: {lcls:.4f}; target_cls: {loss_cls_target:.4f};'
+                    f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
                     f'discrepancy: {discrep_loss:.4f}'
                     f'mask: {mask:.4f}'
                     f'avg: {avg:.4f}; discrep_avg: {davg:.4f}'
