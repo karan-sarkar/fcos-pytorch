@@ -242,7 +242,6 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         dlosses.append(discrep_loss)
         avg = sum(losses) / len(losses)
         davg = sum(dlosses) / len(dlosses)
-        del loss_dict, loss_reduced
         
         if i % 100 == 0:
             torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
