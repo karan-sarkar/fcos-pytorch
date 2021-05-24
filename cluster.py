@@ -18,7 +18,7 @@ from collections import Counter
 from bdd import *
 
 CLUSTERS = 10
-BATCH_SIZE = 4
+BATCH_SIZE = 2
 
 root_img_path = "bdd100k/images/100k"
 root_anno_path = "bdd100k_labels/labels"
@@ -81,7 +81,7 @@ backbone = backbone.to(device)
 means = torch.randn(CLUSTERS, FEATURES).to(device)
 
 
-def train(dataset, model, means):
+def train(dataset, m, means):
     i = 0
     loss = []
     
