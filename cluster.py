@@ -20,9 +20,11 @@ from bdd import *
 CLUSTERS = 10
 BATCH_SIZE = 4
 
-root_img_path = "bdd100k_images/bdd100k/images/100k"
-root_anno_path = "bdd100k/labels"
+root_img_path = "bdd100k/images/100k"
+root_anno_path = "bdd100k_labels/labels"
 
+train_img_path = root_img_path + "/train/"
+val_img_path = root_img_path + "/val/"
 
 train_anno_json_path = root_anno_path + "/bdd100k_labels_images_train.json"
 val_anno_json_path = root_anno_path + "/bdd100k_labels_images_val.json"
