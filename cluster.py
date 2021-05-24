@@ -105,7 +105,7 @@ def train(dataset, m, means):
         change = torch.einsum('bf,bk->kf', features, clusters)
         means = means * (i/(i + 1)) + change * (1/(i + 1))
         
-        del images, features, dist, clusters, change
+        del images, features, dist, clusters, change, boxes, labels, attr
         
         i += 1
 
@@ -129,13 +129,16 @@ def valid(dataset, model, means):
                 results[i][flags[i]] += 1
                 results[i]['total'] += 1
         
-        for res in results:
-            total = res['total']
-            for key in res.keys():
-                if key != 'total':
-                    res[key] /= total
+        del images, features, dist, clusters, boxes, labels, attr
         
-        print(results)
+    for res in results:
+        total = res['total']
+        for key in res.keys():
+            if key != 'total':
+                res[key] /= total
+    
+    
+    print(results)
         
         i += 1
 
