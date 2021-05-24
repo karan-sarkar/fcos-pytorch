@@ -59,7 +59,7 @@ def load(dset, sample):
     return torch.utils.data.DataLoader(dset,batch_size=BATCH_SIZE,shuffle=True, collate_fn=dset.collate_fn)
 
 
-class Backbone(nn.Modul):
+class Backbone(nn.Module):
     def __init__(self):
         super(Backbone, self).__init__()
 
