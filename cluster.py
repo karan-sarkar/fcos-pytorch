@@ -87,37 +87,38 @@ def train(dataset, model, means):
     
     pbar = tqdm.tqdm(load(dataset))
     results = []
-    for images, boxes, labels, attr in pbar:
-        images = images.to(device)
-        features = model(images)
-        
-        x2 = (features * features).sum(1).view(-1, 1)
-        y2 = (means * means).sum(1).view(1, -1)
-        xy = torch.einsum('bf,kf->bk', features, means)
-        dist = -2 * xy + x2 + y2
-        
-        loss.append(float(dist.min(1)[0].mean()))
-        avg = sum(loss) / len(loss)
-        pbar.set_description(str(avg))
-        
-        
-        
-        clusters = F.one_hot(dist.argmin(1), CLUSTERS).float()
-        change = torch.einsum('bf,bk->kf', features, clusters)
-        means = means * (i/(i + 1)) + change * (1/(i + 1))
-        
-        k = 0
-        classes = dist.argmin(1)
-        for flags in attr:
-            for j in range(len(flags)):
-                if j > len(results) - 1:
-                    results.append(Counter())
-                results[j][(flags[j], int(classes[k]) )] += 1
-            k += 1
-        
-        del images, features, dist, clusters, change, boxes, labels, attr, x2, y2, xy
-        
-        i += 1
+    with torch.no_grad():
+        for images, boxes, labels, attr in pbar:
+            images = images.to(device)
+            features = model(images)
+            
+            x2 = (features * features).sum(1).view(-1, 1)
+            y2 = (means * means).sum(1).view(1, -1)
+            xy = torch.einsum('bf,kf->bk', features, means)
+            dist = -2 * xy + x2 + y2
+            
+            loss.append(float(dist.min(1)[0].mean()))
+            avg = sum(loss) / len(loss)
+            pbar.set_description(str(avg))
+            
+            
+            
+            clusters = F.one_hot(dist.argmin(1), CLUSTERS).float()
+            change = torch.einsum('bf,bk->kf', features, clusters)
+            means = means * (i/(i + 1)) + change * (1/(i + 1))
+            
+            k = 0
+            classes = dist.argmin(1)
+            for flags in attr:
+                for j in range(len(flags)):
+                    if j > len(results) - 1:
+                        results.append(Counter())
+                    results[j][(flags[j], int(classes[k]) )] += 1
+                k += 1
+            
+            del images, features, dist, clusters, change, boxes, labels, attr, x2, y2, xy
+            
+            i += 1
     
     
     print(results)        
