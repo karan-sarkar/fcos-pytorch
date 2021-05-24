@@ -105,6 +105,8 @@ def train(dataset, model, means):
         change = torch.einsum('bf,bk->kf', features, clusters)
         means = means * (i/(i + 1)) + change * (1/(i + 1))
         
+        del images, features, dist, clusters, change
+        
         i += 1
 
 def valid(dataset, model, means):
