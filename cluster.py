@@ -48,7 +48,7 @@ def make_dataset(train):
     
     img_list = []
     for i in tqdm.tqdm(range(len(data))):
-        img_list.append(header + data[i]['name'] + '.jpg')
+        img_list.append(header + data[i]['name'])
     dset = BDD(img_list, json_file)
     return dset
 
