@@ -110,7 +110,6 @@ def train(dataset, m, means):
         i += 1
 
 def valid(dataset, model, means):
-    i = 0
     results = []
     for images, boxes, labels, attr in tqdm.tqdm(load(dataset)):
         images = images.to(device)
@@ -139,8 +138,6 @@ def valid(dataset, model, means):
     
     
     print(results)
-        
-        i += 1
 
 for _ in range(100):
     train(train_dat, backbone, means)
