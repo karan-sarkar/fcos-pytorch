@@ -55,7 +55,7 @@ def make_dataset(train):
 train_dat = make_dataset(True)
 val_dat = make_dataset(False)
 
-def load(dset, sample):
+def load(dset):
     return torch.utils.data.DataLoader(dset,batch_size=BATCH_SIZE,shuffle=True, collate_fn=dset.collate_fn)
 
 
