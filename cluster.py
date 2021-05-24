@@ -83,7 +83,10 @@ means = torch.randn(CLUSTERS, FEATURES).to(device)
 
 def train(dataset, model, means):
     i = 0
-    for images, boxes, labels, attr in tqdm.tqdm(load(dataset)):
+    loss = []
+    
+    pbar = tqdm.tqdm(load(dataset))
+    for images, boxes, labels, attr in pbar:
         images = images.to(device)
         features = model(images)
         
@@ -92,7 +95,13 @@ def train(dataset, model, means):
         xy = torch.einsum('bf,kf->bk', features, means)
         dist = -2 * xy + x2 + y2
         
-        clusters = F.one_hot(dist.argmin(1), CLUSTERS)
+        loss.append(float(dist.min(1)[0].mean()))
+        avg = sum(loss) / len(loss)
+        pbar.set_description(str(avg))
+        
+        
+        
+        clusters = F.one_hot(dist.argmin(1), CLUSTERS).float()
         change = torch.einsum('bf,bk->kf', features, clusters)
         means = means * (i/(i + 1)) + change * (1/(i + 1))
         
