@@ -81,11 +81,10 @@ backbone = backbone.to(device)
 means = torch.randn(CLUSTERS, FEATURES).to(device)
 
 
-def train(dataset, m, means):
+def train(dataset, model, means):
     i = 0
     loss = []
     
-    model = nn.DataParallel(m).to(device)
     pbar = tqdm.tqdm(load(dataset))
     for images, boxes, labels, attr in pbar:
         images = images.to(device)
@@ -106,7 +105,7 @@ def train(dataset, m, means):
         change = torch.einsum('bf,bk->kf', features, clusters)
         means = means * (i/(i + 1)) + change * (1/(i + 1))
         
-        del images, features, dist, clusters, change, boxes, labels, attr
+        del images, features, dist, clusters, change, boxes, labels, attr, x2, y2, xy
         
         i += 1
 
@@ -129,7 +128,7 @@ def valid(dataset, model, means):
                 results[i][flags[i]] += 1
                 results[i]['total'] += 1
         
-        del images, features, dist, clusters, boxes, labels, attr
+        del images, features, dist, clusters, boxes, labels, attr, x2, y2, xy
         
     for res in results:
         total = res['total']
