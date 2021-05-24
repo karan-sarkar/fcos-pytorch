@@ -63,7 +63,7 @@ class Backbone(nn.Module):
     def __init__(self):
         super(Backbone, self).__init__()
 
-        backbone = models.resnet50(pretrained=True)
+        backbone = models.resnet18(pretrained=True)
         layers = list(backbone.children())[:-1]
         self.num_filters = backbone.fc.in_features
         self.feature_extractor = nn.Sequential(*layers)
@@ -86,6 +86,7 @@ def train(dataset, model, means):
     loss = []
     
     pbar = tqdm.tqdm(load(dataset))
+    results = []
     for images, boxes, labels, attr in pbar:
         images = images.to(device)
         features = model(images)
@@ -105,40 +106,21 @@ def train(dataset, model, means):
         change = torch.einsum('bf,bk->kf', features, clusters)
         means = means * (i/(i + 1)) + change * (1/(i + 1))
         
+        k = 0
+        classes = dist.argmin(1)
+        for flags in attr:
+            for j in range(len(flags)):
+                if j > len(results) - 1:
+                    results.append(Counter())
+                results[j][(flags[j], int(classes[k]) )] += 1
+            k += 1
+        
         del images, features, dist, clusters, change, boxes, labels, attr, x2, y2, xy
         
         i += 1
-
-def valid(dataset, model, means):
-    results = []
-    for images, boxes, labels, attr in tqdm.tqdm(load(dataset)):
-        images = images.to(device)
-        features = model(images)
-        
-        x2 = (features * features).sum(1).view(-1, 1)
-        y2 = (means * means).sum(1).view(1, -1)
-        xy = torch.einsum('bf,kf->bk', features, means)
-        dist = -2 * xy + x2 + y2
-        
-        clusters = dist.argmin(1)
-        for flags in attr:
-            for i in range(len(flags)):
-                if i > len(results) - 1:
-                    results.append(Counter())
-                results[i][flags[i]] += 1
-                results[i]['total'] += 1
-        
-        del images, features, dist, clusters, boxes, labels, attr, x2, y2, xy
-        
-    for res in results:
-        total = res['total']
-        for key in res.keys():
-            if key != 'total':
-                res[key] /= total
     
     
-    print(results)
+    print(results)        
 
 for _ in range(100):
     train(train_dat, backbone, means)
-    valid(val_dat, backbone, means)
