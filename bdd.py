@@ -86,7 +86,7 @@ class BDD(torch.utils.data.Dataset):
 
         boxes = torch.Tensor(bboxes)
         labels = torch.Tensor(labels).long()
-        img = transforms.ToTensor()(image)
+        img = transforms.ToTensor()(img)
         
         return img, boxes, labels, attr
     
