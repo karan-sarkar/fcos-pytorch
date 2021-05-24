@@ -11,7 +11,6 @@ import tqdm
 import torch
 from torch import Tensor, nn
 from torch.utils.data import Dataset
-from util import *
 
 
 def get_ground_truths(train_img_path_list, idx, anno_data):
