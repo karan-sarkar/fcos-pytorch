@@ -17,8 +17,8 @@ from collections import Counter
 
 from bdd import *
 
-CLUSTERS = 10
-BATCH_SIZE = 2
+CLUSTERS = int(input("clusters"))
+BATCH_SIZE = int(input("batch"))
 
 root_img_path = "bdd100k/images/100k"
 root_anno_path = "bdd100k_labels/labels"
@@ -85,6 +85,7 @@ def train(dataset, m, means):
     i = 0
     loss = []
     
+    model = nn.DataParallel(m).to(device)
     pbar = tqdm.tqdm(load(dataset))
     for images, boxes, labels, attr in pbar:
         images = images.to(device)
