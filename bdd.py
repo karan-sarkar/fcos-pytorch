@@ -11,6 +11,7 @@ import tqdm
 import torch
 from torch import Tensor, nn
 from torch.utils.data import Dataset
+import torchvision.transforms as transforms
 
 
 def get_ground_truths(train_img_path_list, idx, anno_data):
@@ -85,6 +86,7 @@ class BDD(torch.utils.data.Dataset):
 
         boxes = torch.Tensor(bboxes)
         labels = torch.Tensor(labels).long()
+        img = transforms.ToTensor()(image)
         
         return img, boxes, labels, attr
     
