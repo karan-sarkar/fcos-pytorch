@@ -223,20 +223,20 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         # Train Bottom
         for j in range(6):
             g_opt.zero_grad()
-            #loss_dict, _ = model(images.tensors, targets=targets, r=r)
-            #loss_cls = loss_dict['loss_cls'].mean()
-            #loss_box = loss_dict['loss_box'].mean()
-            #loss_center = loss_dict['loss_center'].mean()
+            loss_dict, _ = model(images.tensors, targets=targets, r=r)
+            loss_cls = loss_dict['loss_cls'].mean()
+            loss_box = loss_dict['loss_box'].mean()
+            loss_center = loss_dict['loss_center'].mean()
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
             dloss, mask = compare(p, q)
             dloss += compare(q, p)[0]
-            #loss = loss_cls + loss_box + loss_center + dloss
+            loss = loss_cls + loss_box + loss_center + dloss
             loss = dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             g_opt.step()
-            #del loss_cls, loss_box, loss_center
+            del loss_cls, loss_box, loss_center
         
         
         discrep_loss = dloss.item()
