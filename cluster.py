@@ -103,7 +103,7 @@ def train(dataset, model, means, counts):
             features = style(model(images))
             if means is None:
                 means = torch.randn(CLUSTERS, features.size(1)).to(device)
-                counts = torch.zeros(CLUSTERS).to(device)
+                counts = torch.ones(CLUSTERS).to(device)
             
             x2 = (features * features).sum(1).view(-1, 1)
             y2 = (means * means).sum(1).view(1, -1)
