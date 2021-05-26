@@ -94,7 +94,8 @@ def train(dataset, model, means):
     loss = []
     
     pbar = tqdm.tqdm(load(dataset))
-    results = []
+    results = Counter()
+    totals = Counter()
     with torch.no_grad():
         for images, boxes, labels, attr in pbar:
             images = images.to(device)
@@ -121,15 +122,18 @@ def train(dataset, model, means):
             classes = dist.argmin(1)
             for flags in attr:
                 for j in range(len(flags)):
-                    if j > len(results) - 1:
-                        results.append(Counter())
-                    results[j][(flags[j], int(classes[k]) )] += 1
+                    totals[flags[j]] += 1
+                    results[(flags[j], int(classes[k]) )] += 1
+                    
                 k += 1
             
             del images, features, dist, clusters, change, boxes, labels, attr, x2, y2, xy
             
             i += 1
-    
+            if i % 1000 == 0:
+                print(results) 
+    for (flag, klass) in results.keys():
+        results[(flag, klass)] /= totals[flag]
     
     print(results)        
 
