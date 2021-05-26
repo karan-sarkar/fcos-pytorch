@@ -87,9 +87,10 @@ backbone = Backbone()
 FEATURES = backbone.num_filters
 backbone = backbone.to(device)
 means = None
+counts = None
 
 
-def train(dataset, model, means):
+def train(dataset, model, means, counts):
     i = 0
     loss = []
     
@@ -102,6 +103,7 @@ def train(dataset, model, means):
             features = style(model(images))
             if means is None:
                 means = torch.randn(CLUSTERS, features.size(1)).to(device)
+                counts = torch.zeros(CLUSTERS).to(device)
             
             x2 = (features * features).sum(1).view(-1, 1)
             y2 = (means * means).sum(1).view(1, -1)
@@ -115,8 +117,9 @@ def train(dataset, model, means):
             
             
             clusters = F.one_hot(dist.argmin(1), CLUSTERS).float()
+            counts += clusters.sum(0)
             change = torch.einsum('bf,bk->kf', features, clusters)
-            means = means * (i/(i + 1)) + change * (1/(i + 1))
+            means += (change - mean) * counts.view(-1, 1) / counts.sum()
             
             k = 0
             classes = dist.argmin(1)
@@ -138,4 +141,4 @@ def train(dataset, model, means):
     print([(key, results[key])  for key in sorted(results)])       
 
 for _ in range(100):
-    train(train_dat, backbone, means)
+    train(train_dat, backbone, means, counts)
