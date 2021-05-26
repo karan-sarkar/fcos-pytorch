@@ -103,7 +103,7 @@ def train(dataset, model, means, counts):
             features = style(model(images))
             if means is None:
                 means = torch.randn(CLUSTERS, features.size(1)).to(device)
-                counts = torch.ones(CLUSTERS).to(device)
+                counts = torch.zeros(CLUSTERS).to(device)
             
             x2 = (features * features).sum(1).view(-1, 1)
             y2 = (means * means).sum(1).view(1, -1)
@@ -115,12 +115,15 @@ def train(dataset, model, means, counts):
             pbar.set_description(str(avg))
             
             
-            
-            clusters = F.one_hot(dist.argmin(1), CLUSTERS).float()
+            assign = dist.argmin(1)
+            clusters = F.one_hot(assign, CLUSTERS).float()
             current = clusters.sum(0)
             counts += current
-            change = torch.einsum('bf,bk->kf', features, clusters)
-            means += (change - means) * (current / counts).view(-1, 1)
+            
+            mean_split = [means[i] for i in range(means.size(0))]
+            for i in range(clusters.size(0)):
+                mean_split[int(assign[i])] += (features[i] - mean_split[int(assign[i])]) / counts[i]
+            means = torch.stack(mean_split, 0)
             
             k = 0
             classes = dist.argmin(1)
