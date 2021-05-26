@@ -142,8 +142,8 @@ def train(dataset, model, means, counts):
                 
     for (flag, klass) in results.keys():
         results[(flag, klass)] /= totals[flag]
-    
-     print([(key, results[key]) for key in sorted(results.keys())])       
+
+    print([(key, results[key]) for key in sorted(results.keys())])       
 
 for _ in range(100):
     train(train_dat, backbone, means, counts)
