@@ -85,7 +85,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 backbone = Backbone()
 FEATURES = backbone.num_filters
 backbone = backbone.to(device)
-means = torch.randn(CLUSTERS, FEATURES).to(device)
+means = None
 
 
 def train(dataset, model, means):
@@ -98,7 +98,8 @@ def train(dataset, model, means):
         for images, boxes, labels, attr in pbar:
             images = images.to(device)
             features = style(model(images))
-            print(features.shape)
+            if means is None:
+                means = torch.randn(CLUSTERS, features.size(1))
             
             x2 = (features * features).sum(1).view(-1, 1)
             y2 = (means * means).sum(1).view(1, -1)
