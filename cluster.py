@@ -117,9 +117,10 @@ def train(dataset, model, means, counts):
             
             
             clusters = F.one_hot(dist.argmin(1), CLUSTERS).float()
-            counts += clusters.sum(0)
+            current = clusters.sum(0)
+            counts += current
             change = torch.einsum('bf,bk->kf', features, clusters)
-            means += (change - means) * counts.view(-1, 1) / counts.sum()
+            means += (change - means) * (current / counts).view(-1, 1)
             
             k = 0
             classes = dist.argmin(1)
