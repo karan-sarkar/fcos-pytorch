@@ -131,11 +131,11 @@ def train(dataset, model, means):
             
             i += 1
             if i % 1000 == 0:
-                print(results) 
+                print(sorted(results)) 
     for (flag, klass) in results.keys():
         results[(flag, klass)] /= totals[flag]
     
-    print(results)        
+    print(sorted(results))      
 
 for _ in range(100):
     train(train_dat, backbone, means)
