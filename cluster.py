@@ -91,7 +91,7 @@ counts = None
 
 
 def train(dataset, model, means, counts):
-    i = 0
+    iter = 0
     loss = []
     
     pbar = tqdm.tqdm(load(dataset))
@@ -136,9 +136,10 @@ def train(dataset, model, means, counts):
             
             del images, features, dist, clusters, boxes, labels, attr, x2, y2, xy
             
-            i += 1
-            if i % 1000 == 0:
+            iter += 1
+            if iter % 1000 == 0:
                 print([(key, results[key]) for key in sorted(results)]) 
+                
     for (flag, klass) in results.keys():
         results[(flag, klass)] /= totals[flag]
     
