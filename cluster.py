@@ -66,7 +66,6 @@ class Backbone(nn.Module):
         backbone = models.resnet18(pretrained=True)
         self.layers = list(backbone.children())[:-1]
         self.num_filters = backbone.fc.in_features
-        self.feature_extractor = nn.Sequential(*layers)
 
     def forward(self, x):
         y = []
