@@ -99,7 +99,7 @@ def train(dataset, model, means):
             images = images.to(device)
             features = style(model(images))
             if means is None:
-                means = torch.randn(CLUSTERS, features.size(1))
+                means = torch.randn(CLUSTERS, features.size(1)).to(device)
             
             x2 = (features * features).sum(1).view(-1, 1)
             y2 = (means * means).sum(1).view(1, -1)
