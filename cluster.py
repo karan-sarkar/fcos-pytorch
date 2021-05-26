@@ -102,7 +102,7 @@ def train(dataset, model, means, counts):
             images = images.to(device)
             features = style(model(images))
             if means is None:
-                means = torch.randn(CLUSTERS, features.size(1)).to(device)
+                means = features[:CLUSTERS]to(device)
                 counts = torch.zeros(CLUSTERS).to(device)
             
             x2 = (features * features).sum(1).view(-1, 1)
@@ -138,12 +138,12 @@ def train(dataset, model, means, counts):
             
             iter += 1
             if iter % 1000 == 0:
-                print([(key, results[key]) for key in sorted(results)]) 
+                print([(key, results[key]) for key in sorted(results.keys())]) 
                 
     for (flag, klass) in results.keys():
         results[(flag, klass)] /= totals[flag]
     
-    print([(key, results[key])  for key in sorted(results)])       
+     print([(key, results[key]) for key in sorted(results.keys())])       
 
 for _ in range(100):
     train(train_dat, backbone, means, counts)
