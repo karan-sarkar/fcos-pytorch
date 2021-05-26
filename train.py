@@ -355,10 +355,9 @@ if __name__ == '__main__':
     
     if args.ckpt is not None:
         (model, c_opt, g_opt) = torch.load('slim_fcos_' + str(args.ckpt) + '.pth')
-        #if isinstance(model, nn.DataParallel):
-            #model = model.module
-        if not isinstance(model, nn.DataParallel):
-            model = nn.DataParallel(model)
+        if isinstance(model, nn.DataParallel):
+            model = model.module
+        model = nn.DataParallel(model)
     else:
         args.ckpt = 0
     for g in c_opt.param_groups:
