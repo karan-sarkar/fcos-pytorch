@@ -77,7 +77,8 @@ class Backbone(nn.Module):
 
 def style(layers):
     result = [torch.einsum('bcmn,bdmn->bcd', layer, layer).view(layer.size(0), -1) for layer in layers]
-    return torch.cat(result, 1)
+    result = torch.cat(result, 1)
+    return result / result.size(1)
     
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
