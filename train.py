@@ -223,22 +223,22 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         # Train Bottom
         for j in range(6):
             g_opt.zero_grad()
-            (loss_dict, _), (loss_dict2, _) = model(images.tensors, targets=targets, r=r)
-            loss_cls = loss_dict['loss_cls'].mean()
-            loss_box = loss_dict['loss_box'].mean()
-            loss_center = loss_dict['loss_center'].mean()
+            #(loss_dict, _), (loss_dict2, _) = model(images.tensors, targets=targets, r=r)
+            #loss_cls = loss_dict['loss_cls'].mean()
+            #loss_box = loss_dict['loss_box'].mean()
+            #loss_center = loss_dict['loss_center'].mean()
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
             dloss, mask = compare(p, q)
             dloss += compare(q, p)[0]
-            loss = loss_cls + loss_box + loss_center
+            #loss = loss_cls + loss_box + loss_center
             
-            loss_cls2 = loss_dict2['loss_cls'].mean()
-            loss_box2 = loss_dict2['loss_box'].mean()
-            loss_center2 = loss_dict2['loss_center'].mean()
-            loss += loss_cls + loss_box + loss_center
+            #loss_cls2 = loss_dict2['loss_cls'].mean()
+            #loss_box2 = loss_dict2['loss_box'].mean()
+            #loss_center2 = loss_dict2['loss_center'].mean()
+            #loss += loss_cls + loss_box + loss_center
             
-            loss += dloss
+            loss = dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             g_opt.step()
@@ -250,6 +250,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         dlosses.append(discrep_loss)
         avg = sum(losses) / len(losses)
         davg = sum(dlosses) / len(dlosses)
+        pixel = discrep_loss / float(mask)
         
         if i % 100 == 0:
             torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
@@ -261,7 +262,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                     f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
                     f'discrepancy: {discrep_loss:.4f}'
                     f'mask: {mask:.4f}'
-                    f'avg: {avg:.4f}; discrep_avg: {davg:.4f}'
+                    f'avg: {avg:.4f}; discrep_avg: {davg:.4f}; pixel: {pixel:.4f}'
                 )
             )
         i+= 1
