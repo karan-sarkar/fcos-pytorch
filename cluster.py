@@ -134,7 +134,7 @@ def train(dataset, model, means, counts):
                     
                 k += 1
             
-            del images, features, dist, clusters, change, boxes, labels, attr, x2, y2, xy
+            del images, features, dist, clusters, boxes, labels, attr, x2, y2, xy
             
             i += 1
             if i % 1000 == 0:
