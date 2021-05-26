@@ -64,14 +64,21 @@ class Backbone(nn.Module):
         super(Backbone, self).__init__()
 
         backbone = models.resnet18(pretrained=True)
-        layers = list(backbone.children())[:-1]
+        self.layers = list(backbone.children())[:-1]
         self.num_filters = backbone.fc.in_features
         self.feature_extractor = nn.Sequential(*layers)
 
     def forward(self, x):
-        self.feature_extractor.eval()
-        return self.feature_extractor(x).flatten(1)
+        y = []
+        for layer in self.layers:
+            x = layer(x)
+            y.append(x)
+        return y
 
+def style(layers):
+    result = [torch.einsum('bcmn,bdmn->bcd', layer, layer).view(layer.size(0), -1) for layer in layers]
+    return torch.cat(result, 1)
+    
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -90,7 +97,8 @@ def train(dataset, model, means):
     with torch.no_grad():
         for images, boxes, labels, attr in pbar:
             images = images.to(device)
-            features = model(images)
+            features = style(model(images))
+            print(features.shape)
             
             x2 = (features * features).sum(1).view(-1, 1)
             y2 = (means * means).sum(1).view(1, -1)
