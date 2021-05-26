@@ -121,8 +121,8 @@ def train(dataset, model, means, counts):
             counts += current
             
             mean_split = [means[i] for i in range(means.size(0))]
-            for i in range(clusters.size(0)):
-                mean_split[int(assign[i])] += (features[i] - mean_split[int(assign[i])]) / counts[i]
+            for i in range(features.size(0)):
+                mean_split[int(assign[i])] += (features[i] - mean_split[int(assign[i])]) / counts[int(assign[i])]
             means = torch.stack(mean_split, 0)
             
             k = 0
