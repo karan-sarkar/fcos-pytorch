@@ -242,7 +242,6 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             g_opt.step()
-            del loss_cls, loss_box, loss_center, loss_cls2, loss_box2, loss_center2
         
         
         discrep_loss = dloss.item()
