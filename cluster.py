@@ -65,6 +65,7 @@ class Backbone(nn.Module):
 
         backbone = models.resnet18(pretrained=True)
         self.layers = list(backbone.children())[:-1]
+        self.layers = [layer.to(device) for layer in self.layers]
         self.num_filters = backbone.fc.in_features
 
     def forward(self, x):
