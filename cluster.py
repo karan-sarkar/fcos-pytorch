@@ -152,4 +152,3 @@ for _ in range(100):
     print([(key, results[key]) for key in sorted(results.keys())])
         
     print(sum([-1 * results[key] * float(np.log(results[key])) for key in results.keys()]) / len(totals))
-    return means, counts
