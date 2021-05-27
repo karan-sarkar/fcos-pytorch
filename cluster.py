@@ -12,6 +12,7 @@ import json
 import tqdm
 import time
 from collections import Counter
+from sklearn.metrics.cluster import adjusted_mutual_info_score
 
 
 
@@ -99,6 +100,10 @@ for _ in range(100):
     
     mappings = []
     total_assign = []
+    labels_true = []
+    labels_pred = []
+    flag2idx = []
+    
     with torch.no_grad():
         for images, boxes, labels, attr in pbar:
             images = images.to(device)
@@ -114,8 +119,7 @@ for _ in range(100):
             
             loss.append(float(dist.min(1)[0].mean()))
             avg = sum(loss) / len(loss)
-            pbar.set_description(str(avg))
-            
+            res = str(avg)
             
             assign = dist.argmin(1)
             total_assign.append(assign)
@@ -131,16 +135,27 @@ for _ in range(100):
             k = 0
             classes = dist.argmin(1)
             for flags in attr:
+                labels_pred.append(int(classes[k]))
                 for j in range(len(flags)):
                     if j > len(mappings) - 1:
                         mappings.append({})
+                        labels_true.append([])
+                        flag2idx.append({})
+                    if flags[j] not in flag2idx[j]:
+                        flag2idx[j][flags[j]] = len(flag2idx[j])
                     mappings[j][flags[j]] = len(mappings[j])
+                    labels_true[j].append(flag2idx[j][flags[j]])
                     totals[flags[j]] += 1
                     results[(flags[j], int(classes[k]) )] += 1
                     
                 k += 1
             
             del images, features, dist, clusters, boxes, labels, attr, x2, y2, xy
+            
+            for labels, flags in zip(labels_true, flag2idx):
+                res += ' ' + str(adjusted_mutual_info_score(np.array(labels), np.array(labels_pred)))
+            
+            pbar.set_description(res)
             
             iter += 1
             if iter % 1000 == 0:
@@ -150,5 +165,9 @@ for _ in range(100):
         results[(flag, klass)] /= totals[flag]
 
     print([(key, results[key]) for key in sorted(results.keys())])
+    for labels, flags in zip(labels_true, flag2idx):
+        print(flags)
+        print(adjusted_mutual_info_score(np.array(labels), np.array(labels_pred)))
         
-    print(sum([-1 * results[key] * float(np.log(results[key])) for key in results.keys()]) / len(totals))
+        
+    
