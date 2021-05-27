@@ -152,8 +152,8 @@ for _ in range(100):
             
             del images, features, dist, clusters, boxes, labels, attr, x2, y2, xy
             
-            for labels, flags in zip(labels_true, flag2idx):
-                res += ' ' + str(adjusted_mutual_info_score(np.array(labels), np.array(labels_pred)))
+            #for labels, flags in zip(labels_true, flag2idx):
+                #res += ' ' + str(adjusted_mutual_info_score(np.array(labels), np.array(labels_pred)))
             
             pbar.set_description(res)
             
