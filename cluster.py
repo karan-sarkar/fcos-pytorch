@@ -89,14 +89,16 @@ backbone = backbone.to(device)
 means = None
 counts = None
 
-
-def train(dataset, model, means, counts):
+for _ in range(100):
     iter = 0
     loss = []
     
-    pbar = tqdm.tqdm(load(dataset))
+    pbar = tqdm.tqdm(load(train_dat))
     results = Counter()
     totals = Counter()
+    
+    mappings = []
+    total_assign = []
     with torch.no_grad():
         for images, boxes, labels, attr in pbar:
             images = images.to(device)
@@ -116,6 +118,7 @@ def train(dataset, model, means, counts):
             
             
             assign = dist.argmin(1)
+            total_assign.append(assign)
             clusters = F.one_hot(assign, CLUSTERS).float()
             current = clusters.sum(0)
             counts += current
@@ -129,6 +132,9 @@ def train(dataset, model, means, counts):
             classes = dist.argmin(1)
             for flags in attr:
                 for j in range(len(flags)):
+                    if j > len(mappings) - 1:
+                        mappings.append({})
+                    mappings[j][flags[j]] = len(mappings[j])
                     totals[flags[j]] += 1
                     results[(flags[j], int(classes[k]) )] += 1
                     
@@ -143,7 +149,7 @@ def train(dataset, model, means, counts):
     for (flag, klass) in results.keys():
         results[(flag, klass)] /= totals[flag]
 
-    print([(key, results[key]) for key in sorted(results.keys())])       
-
-for _ in range(100):
-    train(train_dat, backbone, means, counts)
+    print([(key, results[key]) for key in sorted(results.keys())])
+        
+    print(sum([-1 * results[key] * float(np.log(results[key])) for key in results.keys()]) / len(totals))
+    return means, counts
