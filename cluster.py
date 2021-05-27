@@ -18,7 +18,6 @@ from sklearn.metrics.cluster import adjusted_mutual_info_score
 
 from bdd import *
 
-CLUSTERS = int(input("clusters"))
 BATCH_SIZE = int(input("batch"))
 
 root_img_path = "bdd100k/images/100k"
@@ -87,12 +86,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = Backbone()
 FEATURES = model.num_filters
 model = model.to(device)
-means = None
-counts = None
 
-for _ in range(100):
+
+for CLUSTERS in range(1, 21):
+
+    means = None
+    counts = None
     iter = 0
     loss = []
+    
+    print(CLUSTERS)
     
     pbar = tqdm.tqdm(load(train_dat))
     results = Counter()
