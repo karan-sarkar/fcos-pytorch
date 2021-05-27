@@ -84,9 +84,9 @@ def style(layers):
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-backbone = Backbone()
+model = Backbone()
 FEATURES = backbone.num_filters
-backbone = backbone.to(device)
+model = model.to(device)
 means = None
 counts = None
 
