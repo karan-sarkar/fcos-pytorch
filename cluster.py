@@ -79,7 +79,10 @@ def style(layers):
     result = [torch.einsum('bcmn,bdmn->bcd', layer, layer).view(layer.size(0), -1) for layer in layers]
     result = torch.cat(result, 1)
     return result / result.size(1)
-    
+        
+def last(layers):
+    result = layers[-1].view(layers[-1].size(0), -1)
+    return result / result.size(1)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -110,7 +113,7 @@ for CLUSTERS in range(1, 21):
     with torch.no_grad():
         for images, boxes, labels, attr in pbar:
             images = images.to(device)
-            features = style(model(images))
+            features = last(model(images))
             if means is None:
                 means = features[:CLUSTERS].to(device)
                 counts = torch.zeros(CLUSTERS).to(device)
