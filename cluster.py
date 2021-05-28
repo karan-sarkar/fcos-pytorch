@@ -65,12 +65,12 @@ FEATURES = model.num_filters
 model = model.to(device)
 
 
-for CLUSTERS in range(5, 305):
+for cluster in range(20):
 
     means = None
     counts = None
     
-    
+    CLUSTERS = (cluster + 1) * 10
     print('CLUSTER ', CLUSTERS)
     
     for _ in range(5):
