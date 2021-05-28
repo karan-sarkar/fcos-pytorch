@@ -77,8 +77,9 @@ class Backbone(nn.Module):
 
 def style(layers):
     result = [torch.einsum('bcmn,bdmn->bcd', layer, layer).view(layer.size(0), -1) for layer in layers]
+    result = [layer / layer.size(1) for layer in result]
     result = torch.cat(result, 1)
-    return result / result.size(1)
+    return result / len(layers)
         
 def last(layers):
     result = layers[-1].view(layers[-1].size(0), -1)
@@ -91,7 +92,7 @@ FEATURES = model.num_filters
 model = model.to(device)
 
 
-for CLUSTERS in range(1, 21):
+for CLUSTERS in range(1, 11):
 
     means = None
     counts = None
@@ -113,7 +114,7 @@ for CLUSTERS in range(1, 21):
     with torch.no_grad():
         for images, boxes, labels, attr in pbar:
             images = images.to(device)
-            features = last(model(images))
+            features = style(model(images))
             if means is None:
                 means = features[:CLUSTERS].to(device)
                 counts = torch.zeros(CLUSTERS).to(device)
