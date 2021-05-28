@@ -13,6 +13,7 @@ import tqdm
 import time
 from collections import Counter
 from sklearn.metrics.cluster import adjusted_mutual_info_score
+from sklearn.metrics.cluster import homogeneity_score
 
 
 
@@ -20,43 +21,10 @@ from bdd import *
 
 BATCH_SIZE = int(input("batch"))
 
-root_img_path = "bdd100k/images/100k"
-root_anno_path = "bdd100k_labels/labels"
-
-train_img_path = root_img_path + "/train/"
-val_img_path = root_img_path + "/val/"
-
-train_anno_json_path = root_anno_path + "/bdd100k_labels_images_train.json"
-val_anno_json_path = root_anno_path + "/bdd100k_labels_images_val.json"
-
-with open(train_anno_json_path, "r") as file:
-    train_data = json.load(file)
-print(len(train_data))
-with open(val_anno_json_path, "r") as file:
-    test_data = json.load(file)
-print(len(test_data))
-
-def make_dataset(train):
-    if train:
-        data = train_data
-        json_file = train_anno_json_path
-        header = train_img_path
-    else:
-        data = test_data
-        json_file = val_anno_json_path
-        header = val_img_path
-    
-    img_list = []
-    for i in tqdm.tqdm(range(len(data))):
-        img_list.append(header + data[i]['name'])
-    dset = BDD(img_list, json_file)
-    return dset
-
-train_dat = make_dataset(True)
-val_dat = make_dataset(False)
+train_dat = torchvision.datasets.CIFAR100(root = 'CIFAR100/', train = True, download = True)
 
 def load(dset):
-    return torch.utils.data.DataLoader(dset,batch_size=BATCH_SIZE,shuffle=True, collate_fn=dset.collate_fn)
+    return torch.utils.data.DataLoader(dset,batch_size=BATCH_SIZE,shuffle=True)
 
 
 class Backbone(nn.Module):
@@ -102,17 +70,12 @@ for CLUSTERS in range(1, 11):
     print(CLUSTERS)
     
     pbar = tqdm.tqdm(load(train_dat))
-    results = Counter()
-    totals = Counter()
     
-    mappings = []
-    total_assign = []
     labels_true = []
     labels_pred = []
-    flag2idx = []
     
     with torch.no_grad():
-        for images, boxes, labels, attr in pbar:
+        for images, labels in pbar:
             images = images.to(device)
             features = style(model(images))
             if means is None:
@@ -129,7 +92,6 @@ for CLUSTERS in range(1, 11):
             res = str(avg)
             
             assign = dist.argmin(1)
-            total_assign.append(assign)
             clusters = F.one_hot(assign, CLUSTERS).float()
             current = clusters.sum(0)
             counts += current
@@ -139,42 +101,16 @@ for CLUSTERS in range(1, 11):
                 mean_split[int(assign[i])] += (features[i] - mean_split[int(assign[i])]) / counts[int(assign[i])]
             means = torch.stack(mean_split, 0)
             
-            k = 0
-            classes = dist.argmin(1)
-            for flags in attr:
-                labels_pred.append(int(classes[k]))
-                for j in range(len(flags)):
-                    if j > len(mappings) - 1:
-                        mappings.append({})
-                        labels_true.append([])
-                        flag2idx.append({})
-                    if flags[j] not in flag2idx[j]:
-                        flag2idx[j][flags[j]] = len(flag2idx[j])
-                    mappings[j][flags[j]] = len(mappings[j])
-                    labels_true[j].append(flag2idx[j][flags[j]])
-                    totals[flags[j]] += 1
-                    results[(flags[j], int(classes[k]) )] += 1
-                    
-                k += 1
+            labels_true.append(labels.detach().numpy())
+            labels_pred.append(assign.detach().numpy())
             
-            del images, features, dist, clusters, boxes, labels, attr, x2, y2, xy
-            
-            #for labels, flags in zip(labels_true, flag2idx):
-                #res += ' ' + str(adjusted_mutual_info_score(np.array(labels), np.array(labels_pred)))
-            
+            res += ' ' + adjusted_mutual_info_score(np.concatenate(labels_true, 0), np.concatenate(labels_pred, 0))
             pbar.set_description(res)
             
             iter += 1
-            if iter % 1000 == 0:
-                print([(key, results[key]) for key in sorted(results.keys())]) 
-                
-    for (flag, klass) in results.keys():
-        results[(flag, klass)] /= totals[flag]
 
-    print([(key, results[key]) for key in sorted(results.keys())])
-    for labels, flags in zip(labels_true, flag2idx):
-        print(flags)
-        print(adjusted_mutual_info_score(np.array(labels), np.array(labels_pred)))
+        print(adjusted_mutual_info_score(np.concatenate(labels_true, 0), np.concatenate(labels_pred, 0)))
+        print(homogeneity_score(np.concatenate(labels_true, 0), np.concatenate(labels_pred, 0)))
         
         
     
