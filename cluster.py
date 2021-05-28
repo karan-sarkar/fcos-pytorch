@@ -109,7 +109,7 @@ for CLUSTERS in range(1, 11):
             labels_true.append(labels.cpu().detach().numpy())
             labels_pred.append(assign.cpu().detach().numpy())
             
-            res += ' ' + adjusted_mutual_info_score(np.concatenate(labels_true, 0), np.concatenate(labels_pred, 0))
+            res += ' ' + str(adjusted_mutual_info_score(np.concatenate(labels_true, 0), np.concatenate(labels_pred, 0)))
             pbar.set_description(res)
             
             iter += 1
