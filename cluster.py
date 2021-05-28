@@ -21,7 +21,12 @@ from bdd import *
 
 BATCH_SIZE = int(input("batch"))
 
-train_dat = torchvision.datasets.CIFAR100(root = 'CIFAR100/', train = True, download = True)
+trans = torchvision.transforms.Compose([
+    torchvision.transforms.ToTensor(),
+    torchvision.transforms.Normalize((0.5,), (0.5,))
+ ])
+
+train_dat = torchvision.datasets.CIFAR100(root = 'CIFAR100/', train = True, download = True, transform = trans)
 
 def load(dset):
     return torch.utils.data.DataLoader(dset,batch_size=BATCH_SIZE,shuffle=True)
