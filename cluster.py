@@ -85,7 +85,7 @@ for cluster in range(20):
         with torch.no_grad():
             for images, labels in pbar:
                 images = images.to(device)
-                features = style(model(images))
+                features = last(model(images))
                 if means is None:
                     means = features[:CLUSTERS].to(device)
                     counts = torch.zeros(CLUSTERS).to(device)
