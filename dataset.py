@@ -44,11 +44,19 @@ class COCODataset(datasets.CocoDetection):
         self.category2id = {v: i + 1 for i, v in enumerate(self.coco.getCatIds())}
         self.id2category = {v: k for k, v in self.category2id.items()}
         self.id2img = {k: v for k, v in enumerate(self.ids)}
-
+        self.sample = None
         self.transform = transform
-
+    
+    def sample(self, sample):
+        self.sample = sample
+    
+    def __len__(self):
+        if self.sample is None:
+            return len(self.ids)
+        return self.sample.shape[0]
+    
     def __getitem__(self, index):
-        img, annot = super().__getitem__(index)
+        img, annot = super().__getitem__(int(self.sample[index]))
 
         annot = [o for o in annot if o['iscrowd'] == 0]
 
@@ -69,7 +77,7 @@ class COCODataset(datasets.CocoDetection):
         return img, target, index
 
     def get_image_meta(self, index):
-        id = self.id2img[index]
+        id = self.id2img[int(self.sample[index])]
         img_data = self.coco.imgs[id]
 
         return img_data
@@ -105,6 +113,7 @@ def image_list(tensors, size_divisible=0):
     sizes = [img.shape[-2:] for img in tensors]
 
     return ImageList(batch, sizes)
+
 
 
 def collate_fn(config):

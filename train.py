@@ -290,11 +290,18 @@ if __name__ == '__main__':
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    source = COCODataset(args.path, 'train', preset_transform(args, train=True))
-    target = COCODataset(args.path2, 'train', preset_transform(args, train=True))
-    source_set, source_valid_set = torch.utils.data.random_split(source, [int(0.9 * len(source)), int(0.1 * len(source))])
-    target_set, target_valid_set = torch.utils.data.random_split(target, [int(0.9 * len(target)), int(0.1 * len(target))])
+    source_set = COCODataset(args.path, 'train', preset_transform(args, train=True))
+    target_set = COCODataset(args.path2, 'train', preset_transform(args, train=True))
+    source_valid_set = COCODataset(args.path, 'train', preset_transform(args, train=True))
+    target_valid_set = COCODataset(args.path2, 'train', preset_transform(args, train=True))
     
+    source_sample = np.random.permutation(len(source_set))
+    target_sample = np.random.permutation(len(target_set))
+    
+    source_set.sample(source_sample[:int(0.9 * len(source_sample))])
+    target_set.sample(target_sample[:int(0.9 * len(target_sample))])
+    source_valid_set.sample(source_sample[int(0.9 * len(source_sample)):])
+    target_valid_set.sample(target_sample[int(0.9 * len(target_sample)):])
 
     backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
@@ -368,9 +375,9 @@ if __name__ == '__main__':
     model = model.to(device)
     
     for epoch in range(args.epoch):
+        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
         torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
-        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         
        
