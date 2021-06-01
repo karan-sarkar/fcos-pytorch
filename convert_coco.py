@@ -1,139 +1,112 @@
 import os
-import argparse
 import json
-import sys
-from PIL import Image
-import tqdm
-import numpy as np
+import argparse
+from tqdm import tqdm
 
-clusters = np.load('train_cluster_labels.npy')
+parser = argparse.ArgumentParser(description='bdd2coco')
+parser.add_argument('--bdd_dir', type=str, default='E:\\bdd100k')
+parser.add_argument('--k', type=int, default=0)
+cfg = parser.parse_args()
 
-"""the coco dataset's json is a dict, and  its keys is categories, images, annotations;
-   the categories is a list, and each item is a dict which keys are supercategory,id,name;
-   the images is a list, and each item is a dict which keys  are file_name,height,width,id,depth;
-   the annotations is a list, and each item is a dict which keys are category_id,segmentation,area,id,iscrowd"""
+src_val_dir = os.path.join(cfg.bdd_dir, 'labels', 'bdd100k_labels_images_val.json')
+src_train_dir = os.path.join(cfg.bdd_dir, 'labels', 'bdd100k_labels_images_train.json')
 
-filenames = []
-category_names = ["bike","bus", "car", "motor", "person", "rider", "traffic light", "traffic sign", "train", "truck"]
+os.makedirs(os.path.join(cfg.bdd_dir, 'labels_coco'), exist_ok=True)
 
-def parse_args():
-    parser = argparse.ArgumentParser(description='convert the file to coco format')
-    parser.add_argument(
-        '--src',
-        dest='src_path',
-        help='/path/to/source',
-        default=None, type=str
-    )
-    parser.add_argument(
-        '--dst',
-        dest='dst_path',
-        help='/path/to/save.json',
-        default=None,
-        type=str
-    )
-    parser.add_argument(
-        '--dir',
-        dest='im_dir',
-        help='/path/to/image/',
-        default=None,
-        type=str
-    )
-    parser.add_argument(
-        '--k',
-        dest='k',
-        default=None, type=int
-    )
-    if len(sys.argv) == 1:
-        parser.print_help()
-        sys.exit(1)
-    return parser.parse_args()
+dst_val_dir = os.path.join(cfg.bdd_dir, 'labels_coco', 'bdd100k_labels_images_val_coco.json')
+dst_train_dir = os.path.join(cfg.bdd_dir, 'labels_coco', 'bdd100k_labels_images_train_coco.json')
 
-def visual_bbox(im_path, bbox):
-    im = cv2.imread(im_path)
-    bbox = [int(i) for i in bbox]
-    point1 = (bbox[0],bbox[1])
-    point2 = (bbox[2],bbox[3])
-    cv2.rectangle(im,point1,point2,(255,0,0))
-    return im
 
-def make_coco_categories():
-    categoriesList = []
-    for i in range(len(category_names)):
-        eachcategoryDict = {}
-        eachcategoryDict['supercategory'] = 'none'
-        eachcategoryDict['id'] = i + 1
-        eachcategoryDict['name'] = category_names[i]
-        categoriesList.append(eachcategoryDict)
-    return categoriesList
+def bdd2coco_detection(labeled_images, save_dir):
+  attr_dict = {"categories":
+    [
+      {"supercategory": "none", "id": 1, "name": "person"},
+      {"supercategory": "none", "id": 2, "name": "car"},
+      {"supercategory": "none", "id": 3, "name": "rider"},
+      {"supercategory": "none", "id": 4, "name": "bus"},
+      {"supercategory": "none", "id": 5, "name": "truck"},
+      {"supercategory": "none", "id": 6, "name": "bike"},
+      {"supercategory": "none", "id": 7, "name": "motor"},
+      {"supercategory": "none", "id": 8, "name": "traffic light"},
+      {"supercategory": "none", "id": 9, "name": "traffic sign"},
+      {"supercategory": "none", "id": 10, "name": "train"},
+    ]}
 
-def make_coco_images(src_json_file):
-    imagesList = []
-    global filenames
-    for i in range(len(src_json_file)):
-        anno = src_json_file[i]
-        filename = anno['name']
-        filenames.append(filename)
-    filenames = list(set(filenames))
-    print ("it is make_coco_images.......")
-    for index in tqdm.tqdm(range(len(filenames))):
-        eachImageDict = dict()
-        filename = filenames[index]
-        filepath = os.path.join(args.im_dir,filename)
-        assert os.path.isfile(filepath),"{} not is a file".format(filepath)
-        #im = cv2.imread(filepath)
-        #height,width,depth = im.shape
-        im = Image.open(filepath)
-        width,height = im.size
-        eachImageDict['height'] = height
-        eachImageDict['width'] = width
-        #eachImageDict['depth'] = depth
-        eachImageDict['id'] = index
-        eachImageDict['file_name'] = filename
-        imagesList.append(eachImageDict)
-    return imagesList
+  id_dict = {i['name']: i['id'] for i in attr_dict['categories']}
 
-def make_coco_annotations(src_json_file):
-    global filenames
-    annotationsList = []
-    print ("it is make_coco_annotations.....")
-    for i in tqdm.tqdm(range(len(src_json_file))):
-        eachAnnotationDict = dict()
-        anno = src_json_file[i]
-        category = anno['category']
-        bbox = anno['bbox']
-        filename = anno['name']
-        bbox_width = bbox[2] - bbox[0]
-        bbox_height = bbox[3] - bbox[1]
-        xmin = bbox[0]
-        ymin = bbox[1]
-        box = [xmin, ymin, bbox_width, bbox_height]
-        eachAnnotationDict['image_id'] = filenames.index(filename)
-        eachAnnotationDict['bbox'] = box
-        eachAnnotationDict['category_id'] = category_names.index(category) + 1
-        eachAnnotationDict['segmentation'] = [[0,0]]
-        eachAnnotationDict['area'] = 1
-        eachAnnotationDict['id'] = i
-        eachAnnotationDict['iscrowd'] = 0
-        annotationsList.append(eachAnnotationDict)
-    return annotationsList
+  images = list()
+  annotations = list()
+  ignore_categories = set()
 
-def convert_coco(args):
-    src = json.load(open(args.src_path))
-    assert(type(src) == list),"unsupported type"
-    clusters = np.load('train_cluster_labels.npy')
-    src= [src[i] for i in range(len(src)) if i < clusters.shape[0] and clusters[i] == args.k]
-    allInfo = dict()
-    allInfo['categories'] = make_coco_categories()
-    allInfo['images'] = make_coco_images(src)
-    allInfo['annotations'] = make_coco_annotations(src)
-    print (allInfo)
-    save_path = args.dst_path
-    with open(save_path,'w') as writer:
-        json.dump(allInfo,writer)
+  counter = 0
+  for i in tqdm(labeled_images):
+    counter += 1
+    image = dict()
+    image['file_name'] = i['name']
+    image['height'] = 720
+    image['width'] = 1280
 
-def main(args):
-    convert_coco(args)
+    image['id'] = counter
 
-if  __name__ == "__main__":
-    args = parse_args()
-    main(args)
+    empty_image = True
+
+    tmp = 0
+    for l in i['labels']:
+      annotation = dict()
+      if l['category'] in id_dict.keys():
+        tmp = 1
+        empty_image = False
+        annotation["iscrowd"] = 0
+        annotation["image_id"] = image['id']
+        x1 = l['box2d']['x1']
+        y1 = l['box2d']['y1']
+        x2 = l['box2d']['x2']
+        y2 = l['box2d']['y2']
+        annotation['bbox'] = [x1, y1, x2 - x1, y2 - y1]
+        annotation['area'] = float((x2 - x1) * (y2 - y1))
+        annotation['category_id'] = id_dict[l['category']]
+        annotation['ignore'] = 0
+        annotation['id'] = l['id']
+        annotation['segmentation'] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
+        annotations.append(annotation)
+      else:
+        ignore_categories.add(l['category'])
+
+    if empty_image:
+      print('empty image!')
+      continue
+    if tmp == 1:
+      images.append(image)
+
+  attr_dict["images"] = images
+  attr_dict["annotations"] = annotations
+  attr_dict["type"] = "instances"
+
+  print('ignored categories: ', ignore_categories)
+  print('saving...')
+  with open(save_dir, "w") as file:
+    json.dump(attr_dict, file)
+  print('Done.')
+
+
+def main():
+  # create BDD training set detections in COCO format
+  print('Loading training set...')
+  with open(src_train_dir) as f:
+    src = json.load(f)
+  clusters = np.load('train_cluster_labels.npy')
+  src= [src[i] for i in range(len(src)) if i < clusters.shape[0] and clusters[i] == cfg.k]
+  print('Converting training set...')
+  bdd2coco_detection(src, dst_train_dir)
+  '''
+  # create BDD validation set detections in COCO format
+  print('Loading validation set...')
+  with open(src_val_dir) as f:
+    val_labels = json.load(f)
+  print('Converting validation set...')
+  bdd2coco_detection(val_labels, dst_val_dir)
+  '''
+
+if __name__ == '__main__':
+  main()
+  
