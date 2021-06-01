@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 from tqdm import tqdm
+import numpy as np
 
 parser = argparse.ArgumentParser(description='bdd2coco')
 parser.add_argument('--bdd_dir', type=str, default='E:\\bdd100k')
