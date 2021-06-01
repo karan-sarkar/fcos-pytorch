@@ -74,7 +74,7 @@ def make_coco_images(src_json_file):
         filename = anno['name']
         filenames.append(filename)
     filenames = list(set(filenames))
-    print "it is make_coco_images......."
+    print ("it is make_coco_images.......")
     process = ShowProcess(len(filenames))
     for index in range(len(filenames)):
         process.show_process()
@@ -97,7 +97,7 @@ def make_coco_images(src_json_file):
 def make_coco_annotations(src_json_file):
     global filenames
     annotationsList = []
-    print "it is make_coco_annotations....."
+    print ("it is make_coco_annotations.....")
     process = ShowProcess(len(src_json_file))
     for i in range(len(src_json_file)):
         process.show_process()
@@ -130,7 +130,7 @@ def convert_coco(args):
     allInfo['categories'] = make_coco_categories()
     allInfo['images'] = make_coco_images(src)
     allInfo['annotations'] = make_coco_annotations(src)
-    print allInfo
+    print (allInfo)
     save_path = args.dst_path
     with open(save_path,'w') as writer:
         json.dump(allInfo,writer)
