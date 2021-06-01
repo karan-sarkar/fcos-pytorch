@@ -3,7 +3,7 @@ import argparse
 import json
 import sys
 from PIL import Image
-from show_process import ShowProcess
+import tqdm
 import numpy as np
 
 clusters = np.load('train_cluster_labels.npy')
@@ -75,9 +75,7 @@ def make_coco_images(src_json_file):
         filenames.append(filename)
     filenames = list(set(filenames))
     print ("it is make_coco_images.......")
-    process = ShowProcess(len(filenames))
-    for index in range(len(filenames)):
-        process.show_process()
+    for index in tqdm.tqdm(range(len(filenames))):
         eachImageDict = dict()
         filename = filenames[index]
         filepath = os.path.join(args.im_dir,filename)
@@ -98,9 +96,7 @@ def make_coco_annotations(src_json_file):
     global filenames
     annotationsList = []
     print ("it is make_coco_annotations.....")
-    process = ShowProcess(len(src_json_file))
-    for i in range(len(src_json_file)):
-        process.show_process()
+    for i in tqdm.tqdm(range(len(src_json_file))):
         eachAnnotationDict = dict()
         anno = src_json_file[i]
         category = anno['category']
