@@ -45,19 +45,19 @@ class COCODataset(datasets.CocoDetection):
         self.category2id = {v: i + 1 for i, v in enumerate(self.coco.getCatIds())}
         self.id2category = {v: k for k, v in self.category2id.items()}
         self.id2img = {k: v for k, v in enumerate(self.ids)}
-        self.sample = None
+        self.samp = None
         self.transform = transform
     
-    def sample(self, sample):
-        self.sample = sample
+    def sample(self, samp):
+        self.samp = samp
     
     def __len__(self):
-        if self.sample is None:
+        if self.samp is None:
             return len(self.ids)
-        return self.sample.shape[0]
+        return self.samp.shape[0]
     
     def __getitem__(self, index):
-        img, annot = super().__getitem__(int(self.sample[index]))
+        img, annot = super().__getitem__(int(self.samp[index]))
 
         annot = [o for o in annot if o['iscrowd'] == 0]
 
@@ -78,7 +78,7 @@ class COCODataset(datasets.CocoDetection):
         return img, target, index
 
     def get_image_meta(self, index):
-        id = self.id2img[int(self.sample[index])]
+        id = self.id2img[int(self.samp[index])]
         img_data = self.coco.imgs[id]
 
         return img_data
