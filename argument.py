@@ -28,7 +28,7 @@ def get_args():
     args.out_channel = 256
     args.use_p5 = True
     args.n_class = 11
-    args.n_conv = 4
+    args.n_conv = 2
     args.prior = 0.01
     args.threshold = 0.05
     args.top_n = 1000
