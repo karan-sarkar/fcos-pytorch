@@ -307,8 +307,8 @@ if __name__ == '__main__':
     target = COCODataset(args.path2, 'train', preset_transform(args, train=True))
   
     
-    source_sample = np.random.permutation(len(source_set))
-    target_sample = np.random.permutation(len(target_set))
+    source_sample = np.random.permutation(len(source))
+    target_sample = np.random.permutation(len(target))
     
     source_set = CustomSubset(source, source_sample[:int(0.9 * len(source_sample))])
     target_set = CustomSubset(target, target_sample[:int(0.9 * len(target_sample))])
