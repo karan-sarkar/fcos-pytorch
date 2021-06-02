@@ -262,7 +262,6 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         dlosses.append(discrep_loss)
         avg = sum(losses) / len(losses)
         davg = sum(dlosses) / len(dlosses)
-        pixel = discrep_loss / float(mask)
         
         if i % 100 == 0:
             torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
@@ -274,7 +273,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                     f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
                     f'discrepancy: {discrep_loss:.4f}'
                     f'mask: {mask:.4f}'
-                    f'avg: {avg:.4f}; discrep_avg: {davg:.4f}; pixel: {pixel:.4f}'
+                    f'avg: {avg:.4f}; discrep_avg: {davg:.4f}; '
                 )
             )
         i+= 1
