@@ -258,7 +258,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         
         discrep_loss = dloss.item()
-        losses.append(cls + box + center + discrep_loss)
+        losses.append(cls + box + center)
         dlosses.append(discrep_loss)
         avg = sum(losses) / len(losses)
         davg = sum(dlosses) / len(dlosses)
