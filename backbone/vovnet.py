@@ -274,10 +274,22 @@ def vovnet27_slim(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
+    '''
     return _vovnet(
         'vovnet27_slim',
         [64, 80, 96, 112],
         [128, 256, 384, 512],
+        [1, 1, 1, 1],
+        5,
+        pretrained,
+        progress,
+        **kwargs,
+    )
+    '''
+    return _vovnet(
+        'vovnet27_slim',
+        [32, 40, 48, 56],
+        [64, 128, 192, 256],
         [1, 1, 1, 1],
         5,
         pretrained,

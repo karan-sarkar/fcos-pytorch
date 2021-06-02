@@ -24,8 +24,8 @@ def get_args():
     parser = get_argparser()
     args = parser.parse_args()
 
-    args.feat_channels = [0, 0, 256, 384, 512]
-    args.out_channel = 256
+    args.feat_channels = [0, 0, 128, 192, 256]
+    args.out_channel = 128
     args.use_p5 = True
     args.n_class = 11
     args.n_conv = 2
