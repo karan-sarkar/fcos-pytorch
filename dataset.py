@@ -2,7 +2,6 @@ import os
 
 import torch
 from torchvision import datasets
-import numpy as np
 
 from boxlist import BoxList
 
@@ -45,19 +44,11 @@ class COCODataset(datasets.CocoDetection):
         self.category2id = {v: i + 1 for i, v in enumerate(self.coco.getCatIds())}
         self.id2category = {v: k for k, v in self.category2id.items()}
         self.id2img = {k: v for k, v in enumerate(self.ids)}
-        self.samp = None
+
         self.transform = transform
-    
-    def sample(self, samp):
-        self.samp = samp
-    
-    def __len__(self):
-        if self.samp is None:
-            return len(self.ids)
-        return self.samp.shape[0]
-    
+
     def __getitem__(self, index):
-        img, annot = super().__getitem__(int(self.samp[index]))
+        img, annot = super().__getitem__(index)
 
         annot = [o for o in annot if o['iscrowd'] == 0]
 
@@ -78,7 +69,7 @@ class COCODataset(datasets.CocoDetection):
         return img, target, index
 
     def get_image_meta(self, index):
-        id = self.id2img[int(self.samp[index])]
+        id = self.id2img[index]
         img_data = self.coco.imgs[id]
 
         return img_data
@@ -116,6 +107,17 @@ def image_list(tensors, size_divisible=0):
     return ImageList(batch, sizes)
 
 
+class CustomSubset(COCODataset):
+    def __init__(self, dataset, indices):
+        self.subset = torch.utils.data.Subset(dataset, indices)
+        self.dataset = dataset
+        self.indices = indices
+        
+    def __getitem__(self, idx):
+        return self.subset[idx]
+
+    def __len__(self):
+        return len(self.indices)
 
 def collate_fn(config):
     def collate_data(batch):

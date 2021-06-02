@@ -10,7 +10,7 @@ import numpy as np
 from loss import SigmoidFocalLoss
 from argument import get_args
 from backbone import vovnet57, vovnet27_slim
-from dataset import COCODataset, collate_fn
+from dataset import COCODataset, collate_fn, CustomSubset
 from model import FCOS
 from transform import preset_transform
 from evaluate import evaluate
@@ -92,7 +92,7 @@ def valid(args, epoch, loader, dataset, m, device):
     if get_rank() != 0:
         return
 
-    evaluate(dataset, preds)
+    evaluate(dataset.dataset, preds)
     del preds
 
 def flatten(cls_pred):
@@ -303,18 +303,18 @@ if __name__ == '__main__':
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    source_set = COCODataset(args.path, 'train', preset_transform(args, train=True))
-    target_set = COCODataset(args.path2, 'train', preset_transform(args, train=True))
-    source_valid_set = COCODataset(args.path, 'train', preset_transform(args, train=True))
-    target_valid_set = COCODataset(args.path2, 'train', preset_transform(args, train=True))
+    source = COCODataset(args.path, 'train', preset_transform(args, train=True))
+    target = COCODataset(args.path2, 'train', preset_transform(args, train=True))
+  
     
     source_sample = np.random.permutation(len(source_set))
     target_sample = np.random.permutation(len(target_set))
     
-    source_set.sample(source_sample[:int(0.9 * len(source_sample))])
-    target_set.sample(target_sample[:int(0.9 * len(target_sample))])
-    source_valid_set.sample(source_sample[int(0.9 * len(source_sample)):])
-    target_valid_set.sample(target_sample[int(0.9 * len(target_sample)):])
+    source_set = CustomSubset(source, source_sample[:int(0.9 * len(source_sample))])
+    target_set = CustomSubset(target, target_sample[:int(0.9 * len(target_sample))])
+    source_valid_set = CustomSubset(source, source_sample[int(0.9 * len(source_sample)):])
+    target_valid_set = CustomSubset(target, target_sample[int(0.9 * len(target_sample)):])
+
 
     backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
