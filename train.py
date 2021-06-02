@@ -61,20 +61,32 @@ def valid(args, epoch, loader, dataset, m, device):
     pbar = tqdm(loader, dynamic_ncols=True)
 
     preds = {}
-
+    losses = []
     for images, targets, ids in pbar:
         model.zero_grad()
 
         images = images.to(device)
         targets = [target.to(device) for target in targets]
         r = torch.range(0, len(targets) - 1).to(device)
-        
+        model.eval()
         pred = model(images.tensors, image_sizes=images.sizes, r=r)
+        
+        
+        model.train()
+        
+        (loss_dict, _), (loss_dict2, _) = model(images.tensors, targets=targets, r=r)
+        loss_cls = loss_dict['loss_cls'].mean()
+        loss_box = loss_dict['loss_box'].mean()
+        loss_center = loss_dict['loss_center'].mean()
+        
+        loss = loss_cls + loss_box + loss_center 
+        losses.append(float(loss))
 
         pred = [p.to('cpu') for p in pred]
 
         preds.update({id: p for id, p in zip(ids, pred)})
-
+    
+    print('LOSS', sum(losses) / len(losses))
     preds = accumulate_predictions(preds)
 
     if get_rank() != 0:
