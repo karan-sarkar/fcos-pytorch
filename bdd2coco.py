@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 from tqdm import tqdm
+import numpy as np
 
 
 def parse_arguments():
