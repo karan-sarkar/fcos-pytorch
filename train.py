@@ -247,6 +247,7 @@ if __name__ == '__main__':
 
     backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
+    model = model.to(device)
     model = nn.DataParallel(model)
     
     bottom = [p for n, p in model.named_parameters() if ('head' not in n)]
@@ -314,7 +315,7 @@ if __name__ == '__main__':
         g['lr'] = args.lr
     for g in g_opt.param_groups:
         g['lr'] = args.lr2
-    model = model.to(device)
+   
     
     for epoch in range(args.epoch):
         train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
