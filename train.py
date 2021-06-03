@@ -154,10 +154,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     i = 0
     losses = []
     dlosses = []
-    for (images, targets, _), (target_images, target_targets, _) in zip(pbar, target_loader):
-        
-        if len(targets) != len(target_targets):
-            break
+    for (images, targets, _), (_, _, _) in zip(pbar, target_loader):
+       
         
         c_opt.zero_grad()
         g_opt.zero_grad()
@@ -167,11 +165,9 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         images = images.to(device)
         targets = [target.to(device) for target in targets]
         
-        target_images = target_images.to(device)
-        target_targets = [target.to(device) for target in target_targets]
         r = torch.range(0, len(targets) - 1).to(device)
 
-        (loss_dict, _), (_, _) = model(images.tensors, targets=targets, r=r)
+        (loss_dict, _), (loss_dict2, _) = model(images.tensors, targets=targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -183,7 +179,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         box = loss_reduced['loss_box'].mean().item()
         center = loss_reduced['loss_center'].mean().item()
         
-        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
+        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, loss_dict2
         
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
