@@ -35,8 +35,12 @@ def bdd2coco_detection(id_dict, labeled_images, fn, attribute, flag):
     annotations = list()
 
     counter = 0
+    clusters = np.load('train_cluster_labels_vggp.npy')
+    
     for i in tqdm(labeled_images):
-        if i['attributes'][attribute] != flag:
+        #if i['attributes'][attribute] != flag:
+            #continue
+        if int(clusters[counter]) != int(flag)
             continue
         counter += 1
         image = dict()
