@@ -179,7 +179,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         box = loss_reduced['loss_box'].mean().item()
         center = loss_reduced['loss_center'].mean().item()
         
-        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, loss_dict2
+        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
         
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
