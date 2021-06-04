@@ -308,7 +308,7 @@ if __name__ == '__main__':
         (model, c_opt, g_opt) = torch.load('slim_fcos_' + str(args.ckpt) + '.pth')
         if isinstance(model, nn.DataParallel):
             model = model.module
-        model = nn.DataParallel(model, device_ids=[1, 2])
+        model = nn.DataParallel(model)
     else:
         args.ckpt = 0
     for g in c_opt.param_groups:
