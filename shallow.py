@@ -10,8 +10,8 @@ import numpy as np
 import math
 
 class Shallow(nn.Module):
-    def __init__(self):
-        super(Shallow, self, args).__init__()
+    def __init__(self, args):
+        super(Shallow, self).__init__()
 
         backbone = models.resnet50(pretrained=True)
         self.backbone = nn.Sequential(*list(backbone.children())[:-1])
