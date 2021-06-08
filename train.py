@@ -188,10 +188,10 @@ if __name__ == '__main__':
     
     print(source_sample.shape)
     
-    source_set = torch.utils.data.Subset(source, source_sample[:int(0.9 * len(source_sample))])
-    target_set = torch.utils.data.Subset(target, target_sample[:int(0.9 * len(target_sample))])
-    source_valid_set = torch.utils.data.Subset(source, source_sample[int(0.9 * len(source_sample)):])
-    target_valid_set = torch.utils.data.Subset(target, target_sample[int(0.9 * len(target_sample)):])
+    source_set = torch.utils.data.Subset(source, source_sample[:int(args.prop * len(source_sample))])
+    target_set = torch.utils.data.Subset(target, target_sample[:int(args.prop * len(target_sample))])
+    source_valid_set = torch.utils.data.Subset(source, source_sample[int(args.prop * len(source_sample)):])
+    target_valid_set = torch.utils.data.Subset(target, target_sample[int(args.prop * len(target_sample)):])
     
     model = Shallow(args)
     model = model.to(device)

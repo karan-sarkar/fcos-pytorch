@@ -16,6 +16,7 @@ def get_argparser():
     parser.add_argument('--ckpt', type=int)
     parser.add_argument('--path', type=str)
     parser.add_argument('--path2', type=str)
+    parser.add_argument('--prop', type=float)
 
     return parser
 
