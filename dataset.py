@@ -2,7 +2,7 @@ import os
 
 import torch
 from torchvision import datasets
-from torchvision.transforms import functional as F
+import torch.nn.functional as F
 
 from boxlist import BoxList
 
