@@ -14,8 +14,8 @@ def get_argparser():
     parser.add_argument('--epoch', type=int, default=24)
     parser.add_argument('--n_save_sample', type=int, default=5)
     parser.add_argument('--ckpt', type=int)
-    parser.add_argument('path', type=str)
-    parser.add_argument('path2', type=str)
+    parser.add_argument('--path', type=str)
+    parser.add_argument('--path2', type=str)
 
     return parser
 
