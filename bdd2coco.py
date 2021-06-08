@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 from tqdm import tqdm
+import numpy as np
 
 
 def parse_arguments():
@@ -30,14 +31,20 @@ def parse_arguments():
 
 
 def bdd2coco_detection(id_dict, labeled_images, fn, attribute, flag):
-
+    clusters = np.load('train_cluster_labels_vggp.npy')
+    
     images = list()
     annotations = list()
 
     counter = 0
     for i in tqdm(labeled_images):
-        if i['attributes'][attribute] != flag:
-            continue
+        if attribute != 'cluster':
+            if i['attributes'][attribute] != flag:
+                continue
+        else:
+            if counter >= clusters.shape[0] or int(clusters[counter]) != int(flag):
+                continue
+        
         counter += 1
         image = dict()
         image['file_name'] = i['name']
