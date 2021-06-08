@@ -180,13 +180,17 @@ if __name__ == '__main__':
     source = COCODataset(args.path, 'train', preset_transform(args, train=True))
     target = COCODataset(args.path2, 'train', preset_transform(args, train=True))
     
+    print(len(source), len(target))
+    
     source_sample = np.random.permutation(len(source))
     target_sample = np.random.permutation(len(target))
     
-    source_set = CustomSubset(source, source_sample[:int(0.9 * len(source_sample))])
-    target_set = CustomSubset(target, target_sample[:int(0.9 * len(target_sample))])
-    source_valid_set = CustomSubset(source, source_sample[int(0.9 * len(source_sample)):])
-    target_valid_set = CustomSubset(target, target_sample[int(0.9 * len(target_sample)):])
+    print(source_sample.shape)
+    
+    source_set = torch.utils.data.Subset(source, source_sample[:int(0.9 * len(source_sample))])
+    target_set = torch.utils.data.Subset(target, target_sample[:int(0.9 * len(target_sample))])
+    source_valid_set = torch.utils.data.Subset(source, source_sample[int(0.9 * len(source_sample)):])
+    target_valid_set = torch.utils.data.Subset(target, target_sample[int(0.9 * len(target_sample)):])
     
 
     backbone = vovnet27_slim(pretrained=False)
