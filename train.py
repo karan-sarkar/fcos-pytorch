@@ -48,7 +48,7 @@ l1loss = nn.L1Loss()
 bceloss = nn.BCELoss()
 
 @torch.no_grad()
-def valid(args, epoch, loader, dataset, m, device):
+def valid(args, epoch, loader, dataset, model, device):
     if get_rank() == 0:
         pbar = tqdm(loader, dynamic_ncols=True)
 
