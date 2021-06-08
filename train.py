@@ -60,7 +60,7 @@ def valid(args, epoch, loader, dataset, m, device):
     dlosses = []
     for (images, targets, _) in pbar:
         with torch.no_grad():
-            images = images.to(device)
+            images = images.tensors.to(device)
             targets = targets.to(device)
             
             mask = model(images).sigmoid(1).max(1)[0].ge(0.5).float()
@@ -98,9 +98,9 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         # Train Bottom + Top
         
-        images = images.to(device)
+        images = images.tensors.to(device)
         targets = targets.to(device)
-        target_images = target_images.to(device)
+        target_images = target_images.tensors.to(device)
         target_targets = target_targets.to(device)
         
         c_opt.zero_grad()
