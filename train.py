@@ -63,7 +63,7 @@ def valid(args, epoch, loader, dataset, m, device):
             images = images.tensors.to(device)
             targets = targets.to(device)
             
-            mask = model(images).sigmoid(1).max(1)[0].ge(0.5).float()
+            mask = model(images).sigmoid().max(1)[0].ge(0.5).float()
             source_loss = l1loss(mask, targets)
             
             losses.append(float(source_loss))
@@ -81,8 +81,8 @@ def valid(args, epoch, loader, dataset, m, device):
 
 
 def discrep(x):
-    mask = x.sigmoid(1).max(1)[0].ge(0.5).float()
-    return l1loss(x.sigmoid(1), mask)
+    mask = x.sigmoid().max(1)[0].ge(0.5).float()
+    return l1loss(x.sigmoid(), mask)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     if get_rank() == 0:
