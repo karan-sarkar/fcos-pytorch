@@ -66,7 +66,7 @@ def valid(args, epoch, loader, dataset, m, device):
             mask = model(images).sigmoid().ge(0.5).float()
             source_loss = l1loss(mask, targets)
             
-            losses.append(float(source_loss))
+            losses.append(float(source_loss.item()))
             avg = sum(losses) / len(losses)
             
         
@@ -266,10 +266,11 @@ if __name__ == '__main__':
    
     
     for epoch in range(args.epoch):
+        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
         torch.save((model, c_opt, g_opt), 'shallow_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
-        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        
         
        
         
