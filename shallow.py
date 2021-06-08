@@ -13,7 +13,7 @@ class Shallow(nn.Module):
     def __init__(self, args):
         super(Shallow, self).__init__()
 
-        backbone = models.resnet34(pretrained=True)
+        backbone = models.resnet18(pretrained=True)
         self.backbone = nn.Sequential(*list(backbone.children())[:-1])
         self.num_filters = backbone.fc.in_features
         self.fc = nn.Linear(self.num_filters, args.n_class - 1)

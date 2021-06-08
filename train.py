@@ -64,7 +64,7 @@ def valid(args, epoch, loader, dataset, model, device):
             targets = targets.to(device)
             
             mask = model(images).sigmoid().ge(0.5).float()
-            source_loss = l1loss(mask, targets)
+            source_loss = 1 - l1loss(mask, targets)
             
             losses.append(float(source_loss.item()))
             avg = sum(losses) / len(losses)
@@ -84,7 +84,7 @@ def discrep(x):
     mask = x.sigmoid().ge(0.5).float()
     return l1loss(x.sigmoid(), mask)
 
-def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
+def train(args, epoch, loader, target_loader, model, baseline, c_opt, g_opt, device):
     if get_rank() == 0:
         pbar = tqdm(loader, dynamic_ncols=True)
 
@@ -106,6 +106,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         c_opt.zero_grad()
         g_opt.zero_grad()
         loss = bceloss(model(images).view(-1).sigmoid(), targets.view(-1))
+        loss += bceloss(baseline(images).view(-1).sigmoid(), targets.view(-1))
         loss.backward()
         c_opt.step()
         g_opt.step()
@@ -192,14 +193,17 @@ if __name__ == '__main__':
     source_valid_set = torch.utils.data.Subset(source, source_sample[int(0.9 * len(source_sample)):])
     target_valid_set = torch.utils.data.Subset(target, target_sample[int(0.9 * len(target_sample)):])
     
-
-    backbone = vovnet27_slim(pretrained=False)
     model = Shallow(args)
     model = model.to(device)
     model = nn.DataParallel(model)
     
-    bottom = [p for n, p in model.named_parameters() if not filter(n)]
-    top = [p for n, p in model.named_parameters() if filter(n)]
+    baseline = Shallow(args)
+    baseline = model.to(device)
+    baseline = nn.DataParallel(baseline)
+    
+    params = list(model.named_parameters()) + list(baseline.named_parameters())
+    bottom = [p for n, p in params  if not filter(n)]
+    top = [p for n, p in params if filter(n)]
 
     g_opt = optim.SGD(
         bottom,
@@ -266,10 +270,14 @@ if __name__ == '__main__':
    
     
     for epoch in range(args.epoch):
-        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
-        train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
+        train(args, epoch, source_loader, target_loader, model, baseline, c_opt, g_opt, device)
         torch.save((model, c_opt, g_opt), 'shallow_' + str(args.ckpt + epoch + 1) + '.pth')
+        print('Baseline')
+        valid(args, epoch, source_valid_loader, source_valid_set, baseline, device)
+        valid(args, epoch, target_valid_loader, target_valid_set, baseline, device)
+        print('Domain Adapted')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
+        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         
         
        
