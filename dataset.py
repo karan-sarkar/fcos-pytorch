@@ -62,7 +62,7 @@ class COCODataset(datasets.CocoDetection):
         classes = torch.tensor(classes)
         target.fields['labels'] = classes
         
-        binary_classes = F.one_hot(classes, len(self.category2id)).prod(0)
+        binary_classes = F.one_hot(classes, len(self.category2id)).prod(0).float()
         
 
         target.clip(remove_empty=True)
