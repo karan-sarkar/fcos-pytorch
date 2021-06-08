@@ -127,7 +127,7 @@ def collate_fn(config):
     def collate_data(batch):
         batch = list(zip(*batch))
         imgs = image_list(batch[0], config.size_divisible)
-        targets = batch[1]
+        targets = torch.stack(batch[1], 0)
         ids = batch[2]
 
         return imgs, targets, ids
