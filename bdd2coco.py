@@ -42,6 +42,7 @@ def bdd2coco_detection(id_dict, labeled_images, fn, attribute, flag):
             if i['attributes'][attribute] != flag:
                 continue
         else:
+            print(clusters[counter], flag, int(flag))
             if counter >= clusters.shape[0] or int(clusters[counter]) != int(flag):
                 continue
         
