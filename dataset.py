@@ -25,7 +25,7 @@ class COCODataset(datasets.CocoDetection):
     def __init__(self, path, split, transform=None):
         root = os.path.join("bdd100k/images/100k/", split)
         annot = path + "_bdd100k_labels_images_det_coco_" + split + ".json"
-
+        print(annot)
         super().__init__(root, annot)
 
         self.ids = sorted(self.ids)

@@ -176,7 +176,7 @@ if __name__ == '__main__':
     target_valid_set = COCODataset(args.path2, 'val', preset_transform(args, train=True))
   
     '''
-    
+    print(args.path, args.path2)
     source = COCODataset(args.path, 'train', preset_transform(args, train=True))
     target = COCODataset(args.path2, 'train', preset_transform(args, train=True))
     
