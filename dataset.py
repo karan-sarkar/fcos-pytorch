@@ -2,6 +2,7 @@ import os
 
 import torch
 from torchvision import datasets
+from torchvision.transforms import functional as F
 
 from boxlist import BoxList
 
@@ -60,13 +61,16 @@ class COCODataset(datasets.CocoDetection):
         classes = [self.category2id[c] for c in classes]
         classes = torch.tensor(classes)
         target.fields['labels'] = classes
+        
+        binary_classes = F.one_hot(classes).prod(0)
+        
 
         target.clip(remove_empty=True)
 
         if self.transform is not None:
             img, target = self.transform(img, target)
 
-        return img, target, index
+        return img, binary_classes, index
 
     def get_image_meta(self, index):
         id = self.id2img[index]
