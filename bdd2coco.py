@@ -40,10 +40,11 @@ def bdd2coco_detection(id_dict, labeled_images, fn, attribute, flag):
     for i in tqdm(labeled_images):
         if attribute != 'cluster':
             if i['attributes'][attribute] != flag:
+                counter += 1
                 continue
         else:
-            print(clusters[counter], flag, int(flag))
             if counter >= clusters.shape[0] or int(clusters[counter]) != int(flag):
+                counter += 1
                 continue
         
         counter += 1
