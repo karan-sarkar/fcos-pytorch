@@ -198,7 +198,7 @@ if __name__ == '__main__':
     model = nn.DataParallel(model)
     
     baseline = Shallow(args)
-    baseline = model.to(device)
+    baseline = baseline.to(device)
     baseline = nn.DataParallel(baseline)
     
     params = list(model.named_parameters()) + list(baseline.named_parameters())
