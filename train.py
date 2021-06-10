@@ -210,7 +210,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
         
         (_, p) = model(target_images.tensors, targets=target_targets, r=r)
-        dloss, mask_tensor = harden(p)
+        dloss, mask_tensor = harden(p, device)
         mask = mask_tensor.mean().item()
         discrep = dloss.mean().item()
         loss -= dloss
@@ -226,7 +226,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             r = torch.range(0, len(targets) - 1).to(device)
             
             (_, p) = model(target_images.tensors, targets=target_targets, r=r)
-            dloss, mask_tensor = harden(p)
+            dloss, mask_tensor = harden(p, device)
             mask = mask_tensor.mean().item()
             discrep = dloss.mean().item()
             loss = dloss
