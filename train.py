@@ -257,13 +257,14 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         if i % 100 == 0:
             torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
-    
+        
+        ratio = discrep / mask
         if get_rank() == 0:
             pbar.set_description(
                 (
                     f'epoch: {epoch + 1}; cls: {cls:.4f};'
                     f'box: {box:.4f}; center: {center:.4f}; '
-                    f'avg: {avg:.4f}; davg: {davg:.4f}, mask: {mask:.4f}'
+                    f'avg: {avg:.4f}; davg: {davg:.4f}, mask: {mask:.4f}, ratio: {ratio:.4f}'
                 )
             )
         i+= 1
