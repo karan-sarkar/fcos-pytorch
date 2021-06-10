@@ -224,10 +224,24 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             g_opt.zero_grad()
             r = torch.range(0, len(targets) - 1).to(device)
             
+            (loss_dict, _) = model(images.tensors, targets=targets, r=r)
+            loss_cls = loss_dict['loss_cls'].mean()
+            loss_box = loss_dict['loss_box'].mean()
+            loss_center = loss_dict['loss_center'].mean()
+            
+            loss = loss_cls + loss_box + loss_center 
+            
+            loss_reduced = reduce_loss_dict(loss_dict)
+            cls = loss_reduced['loss_cls'].mean().item()
+            box = loss_reduced['loss_box'].mean().item()
+            center = loss_reduced['loss_center'].mean().item()
+            
+            del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
+            
             (_, p) = model(target_images.tensors, targets=target_targets, r=r)
             dloss, mask = harden(p, device)
             discrep = dloss.mean().item()
-            loss = dloss
+            loss += dloss
             
             del p, dloss
             
