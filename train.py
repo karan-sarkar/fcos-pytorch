@@ -160,7 +160,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         targets = [target.to(device) for target in targets]
         target_images = target_images.to(device)
         target_targets = [target.to(device) for target in target_targets]
-       
+        if images.size() != target_images.size():
+            break
         
         c_opt.zero_grad()
         g_opt.zero_grad()
@@ -381,10 +382,11 @@ if __name__ == '__main__':
    
     
     for epoch in range(args.epoch):
-        train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
-        torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
+        torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        
         
        
         
