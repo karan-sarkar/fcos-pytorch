@@ -154,16 +154,18 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     i = 0
     losses = []
     dlosses = []
-    for (images, targets, _), (_, _, _) in zip(pbar, target_loader):
+    for (images, targets, _), (target_images, target_targets, _) in zip(pbar, target_loader):
+    
+        images = images.to(device)
+        targets = [target.to(device) for target in targets]
+        target_images = target_images.to(device)
+        target_targets = [target.to(device) for target in target_targets]
        
         
         c_opt.zero_grad()
         g_opt.zero_grad()
         
         # Train Bottom + Top
-        
-        images = images.to(device)
-        targets = [target.to(device) for target in targets]
         
         r = torch.range(0, len(targets) - 1).to(device)
 
@@ -190,8 +192,56 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         
         
+        c_opt.zero_grad()
+        r = torch.range(0, len(targets) - 1).to(device)
+
+        (loss_dict, _) = model(images.tensors, targets=targets, r=r)
+        loss_cls = loss_dict['loss_cls'].mean()
+        loss_box = loss_dict['loss_box'].mean()
+        loss_center = loss_dict['loss_center'].mean()
+        
+        loss = loss_cls + loss_box + loss_center 
+        
+        loss_reduced = reduce_loss_dict(loss_dict)
+        cls = loss_reduced['loss_cls'].mean().item()
+        box = loss_reduced['loss_box'].mean().item()
+        center = loss_reduced['loss_center'].mean().item()
+        
+        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
+        
+        (_, p) = model(target_images.tensors, targets=target_targets, r=r)
+        dloss, mask_tensor = harden(p)
+        mask = mask_tensor.mean().item()
+        discrep = dloss.mean().item()
+        loss -= dloss
+        
+        del p, dloss, mask
+        
+        loss.backward()
+        nn.utils.clip_grad_norm_(model.parameters(), 10)
+        c_opt.step()
+        
+        for _ in range(4):
+            g_opt.zero_grad()
+            r = torch.range(0, len(targets) - 1).to(device)
+            
+            (_, p) = model(target_images.tensors, targets=target_targets, r=r)
+            dloss, mask_tensor = harden(p)
+            mask = mask_tensor.mean().item()
+            discrep = dloss.mean().item()
+            loss = dloss
+            
+            del p, dloss, mask
+            
+            loss.backward()
+            nn.utils.clip_grad_norm_(model.parameters(), 10)
+            g_opt.step()
+        
+        
         losses.append(cls + box + center)
+        dlosses.append(discrep)
         avg = sum(losses) / len(losses)
+        davg = sum(dlosses) / len(dlosses)
         
         if i % 100 == 0:
             torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
@@ -201,7 +251,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                 (
                     f'epoch: {epoch + 1}; cls: {cls:.4f};'
                     f'box: {box:.4f}; center: {center:.4f}; '
-                    f'avg: {avg:.4f}; '
+                    f'avg: {avg:.4f}; davg: {davg:.4f}, mask: {mask:.4f}'
                 )
             )
         i+= 1
