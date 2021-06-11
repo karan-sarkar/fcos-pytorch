@@ -319,8 +319,9 @@ if __name__ == '__main__':
     print(len(bottom), len(top))
     
     if args.rand_class == "true":
-        for m in top:
-            m.data=torch.randn(m.data.size())*.01
+        for n, m in model.named_parameters():
+            if ('head' in n):
+                m.data=torch.randn(m.data.size())*.01
     
     g_opt = optim.SGD(
         bottom,
