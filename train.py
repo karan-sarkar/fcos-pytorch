@@ -320,7 +320,7 @@ if __name__ == '__main__':
     
     if args.rand_class == "true":
         for m in top:
-            m.weight.data=torch.randn(m.weight.size())*.01
+            m.data=torch.randn(m.data.size())*.01
     
     g_opt = optim.SGD(
         bottom,
