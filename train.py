@@ -370,7 +370,7 @@ if __name__ == '__main__':
     
     if args.ckpt is not None:
         (model, co, go) = torch.load('slim_fcos_' + str(args.ckpt) + '.pth')
-        if not args.rand_class:
+        if args.rand_class != 'true':
             c_opt = co
             g_opt = go
         if isinstance(model, nn.DataParallel):
