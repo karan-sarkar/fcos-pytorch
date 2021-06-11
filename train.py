@@ -318,11 +318,6 @@ if __name__ == '__main__':
     top = [p for n, p in model.named_parameters() if ('head' in n)]
     print(len(bottom), len(top))
     
-    if args.rand_class == "true":
-        for n, m in model.named_parameters():
-            if ('head' in n):
-                m.data=torch.randn(m.data.size())*.01
-    
     g_opt = optim.SGD(
         bottom,
         lr=args.lr,
@@ -385,7 +380,11 @@ if __name__ == '__main__':
         g['lr'] = args.lr
     for g in g_opt.param_groups:
         g['lr'] = args.lr2
-   
+    
+    if args.rand_class == "true":
+        for n, m in model.named_parameters():
+            if ('head' in n):
+                m.data=torch.randn(m.data.size())*.01
     
     for epoch in range(args.epoch):
         train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
