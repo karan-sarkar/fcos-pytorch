@@ -384,7 +384,7 @@ if __name__ == '__main__':
     if args.rand_class == "true":
         for n, m in model.named_parameters():
             if ('head' in n):
-                m.data=torch.randn(m.data.size())*.01
+                m.data=torch.randn(m.data.size()).to(device)*.01
     
     for epoch in range(args.epoch):
         train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
