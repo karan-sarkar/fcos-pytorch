@@ -224,7 +224,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         for _ in range(4):
             g_opt.zero_grad()
             r = torch.range(0, len(targets) - 1).to(device)
-            
+            '''
             (loss_dict, _) = model(images.tensors, targets=targets, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
             loss_box = loss_dict['loss_box'].mean()
@@ -238,11 +238,11 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             center = loss_reduced['loss_center'].mean().item()
             
             del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
-            
+            '''
             (_, p) = model(target_images.tensors, targets=target_targets, r=r)
             dloss, mask = harden(p, device)
             discrep = dloss.mean().item()
-            loss += dloss
+            loss = dloss
             
             del p, dloss
             
@@ -264,7 +264,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                 (
                     f'epoch: {epoch + 1}; cls: {cls:.4f};'
                     f'box: {box:.4f}; center: {center:.4f}; '
-                    f'avg: {avg:.4f}; davg: {davg:.4f}, mask: {mask:.4f}'
+                    f'avg: {avg:.4f}; davg: {davg:.8f}, mask: {mask:.4f}'
                 )
             )
         i+= 1
