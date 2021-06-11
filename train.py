@@ -370,7 +370,10 @@ if __name__ == '__main__':
     )
     
     if args.ckpt is not None:
-        (model, c_opt, g_opt) = torch.load('slim_fcos_' + str(args.ckpt) + '.pth')
+        (temp, c_opt, g_opt) = torch.load('slim_fcos_' + str(args.ckpt) + '.pth')
+        for (n, p), (_, q) in zip(temp.named_parameters(), model.named_parameters()):
+            if ('head' not in n) or args.rand_class != 'true':
+                q = p.to(device)
         if isinstance(model, nn.DataParallel):
             model = model.module
         model = nn.DataParallel(model)
@@ -380,11 +383,6 @@ if __name__ == '__main__':
         g['lr'] = args.lr
     for g in g_opt.param_groups:
         g['lr'] = args.lr2
-    
-    if args.rand_class == "true":
-        for n, m in model.named_parameters():
-            if ('head' in n):
-                m.data=torch.randn(m.data.size()).to(device)*.01
     
     for epoch in range(args.epoch):
         train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
