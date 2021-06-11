@@ -224,7 +224,6 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         for _ in range(4):
             g_opt.zero_grad()
             r = torch.range(0, len(targets) - 1).to(device)
-            '''
             (loss_dict, _) = model(images.tensors, targets=targets, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
             loss_box = loss_dict['loss_box'].mean()
@@ -238,7 +237,6 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             center = loss_reduced['loss_center'].mean().item()
             
             del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
-            '''
             (_, p) = model(target_images.tensors, targets=target_targets, r=r)
             dloss, mask = harden(p, device)
             discrep = dloss.mean().item()
@@ -369,10 +367,14 @@ if __name__ == '__main__':
     )
     
     if args.ckpt is not None:
-        (model, co, go) = torch.load('slim_fcos_' + str(args.ckpt) + '.pth')
+        (m, co, go) = torch.load('slim_fcos_' + str(args.ckpt) + '.pth')
         if args.rand_class != 'true':
             c_opt = co
             g_opt = go
+        else:
+            for (n, p), (_, q) in zip(m.named_parameters(), model.named_parameters()):
+                if 'head' not in n:
+                    q = p.to(device)
         if isinstance(model, nn.DataParallel):
             model = model.module
         model = nn.DataParallel(model)
