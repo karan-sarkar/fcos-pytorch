@@ -221,7 +221,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         c_opt.step()
         
-        for _ in range(4):
+        for _ in range(5):
             g_opt.zero_grad()
             r = torch.range(0, len(targets) - 1).to(device)
             '''
@@ -373,6 +373,7 @@ if __name__ == '__main__':
         if args.rand_class != 'true':
             c_opt = co
             g_opt = go
+            model = m
         else:
             for (n, p), (_, q) in zip(m.named_parameters(), model.named_parameters()):
                 if 'head' not in n:
