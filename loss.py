@@ -72,7 +72,7 @@ class SigmoidFocalLoss(nn.Module):
         ).unsqueeze(0)
 
         t = target.unsqueeze(1)
-        p = torch.softmax(out)
+        p = torch.softmax(out, 1)
         
         gamma = self.gamma
         alpha = self.alpha
