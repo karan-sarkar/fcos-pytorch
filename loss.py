@@ -251,6 +251,7 @@ class FCOSLoss(nn.Module):
     def forward(self, locations, cls_pred, box_pred, center_pred, targets):
         batch = cls_pred[0].shape[0]
         n_class = cls_pred[0].shape[1]
+        print('A', cls_pred[0].shape)
 
         labels, box_targets = self.prepare_target(locations, targets)
 

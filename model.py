@@ -145,6 +145,7 @@ class FCOSHead(nn.Module):
             cls_out = self.cls_tower(feat)
 
             logits.append(self.cls_pred(cls_out))
+            print('C', logits[-1].shape)
             centers.append(self.center_pred(cls_out))
 
             bbox_out = self.bbox_tower(feat)
