@@ -281,6 +281,7 @@ def data_sampler(dataset, shuffle, distributed):
 
 if __name__ == '__main__':
     args = get_args()
+    print(args.n_class)
 
     n_gpu = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
     args.distributed = False

@@ -105,7 +105,7 @@ class FCOSHead(nn.Module):
         super().__init__()
 
         #n_class = n_class - 1
-
+        print('D', n_class)
         cls_tower = []
         bbox_tower = []
 
@@ -159,7 +159,7 @@ class FCOSHead(nn.Module):
 class FCOS(nn.Module):
     def __init__(self, config, backbone):
         super().__init__()
-
+        print('E', config.n_class)
         self.backbone = backbone
         fpn_top = FPNTopP6P7(
             config.feat_channels[-1], config.out_channel, use_p5=config.use_p5
