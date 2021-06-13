@@ -105,7 +105,6 @@ class FCOSHead(nn.Module):
         super().__init__()
 
         #n_class = n_class - 1
-        print('D', n_class)
         cls_tower = []
         bbox_tower = []
 
@@ -145,7 +144,6 @@ class FCOSHead(nn.Module):
             cls_out = self.cls_tower(feat)
 
             logits.append(self.cls_pred(cls_out))
-            print('C', logits[-1].shape)
             centers.append(self.center_pred(cls_out))
 
             bbox_out = self.bbox_tower(feat)
@@ -159,7 +157,6 @@ class FCOSHead(nn.Module):
 class FCOS(nn.Module):
     def __init__(self, config, backbone):
         super().__init__()
-        print('E', config.n_class)
         self.backbone = backbone
         fpn_top = FPNTopP6P7(
             config.feat_channels[-1], config.out_channel, use_p5=config.use_p5
@@ -204,7 +201,6 @@ class FCOS(nn.Module):
         features = self.backbone(input)
         features1 = self.fpn1(features)
         cls_pred1, box_pred1, center_pred1 = self.head1(features1)
-        # print(cls_pred, box_pred, center_pred)
         location1 = self.compute_location(features1)
         
         if self.training:
