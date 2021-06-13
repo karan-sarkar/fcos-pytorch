@@ -210,7 +210,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
         
         (_, p) = model(target_images.tensors, targets=target_targets, r=r)
-        dloss, mask = harden(p, device)
+        dloss = harden(p, device)
         discrep = dloss.mean().item()
         loss -= dloss
         
@@ -239,7 +239,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
             '''
             (_, p) = model(target_images.tensors, targets=target_targets, r=r)
-            dloss, mask = harden(p, device)
+            dloss = harden(p, device)
             discrep = dloss.mean().item()
             loss = dloss
             
@@ -263,7 +263,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                 (
                     f'epoch: {epoch + 1}; cls: {cls:.4f};'
                     f'box: {box:.4f}; center: {center:.4f}; '
-                    f'avg: {avg:.4f}; davg: {davg:.8f}, mask: {mask:.4f}'
+                    f'avg: {avg:.4f}; davg: {davg:.8f}, discrep: {discrep:.4f}'
                 )
             )
         i+= 1
