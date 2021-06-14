@@ -114,7 +114,7 @@ def preset_transform(config, train=True):
         max_size = config.test_max_size
         flip = 0
 
-    normalize = Normalize(mean=config.pixel_mean, std=config.pixel_std)
+    #normalize = Normalize(mean=config.pixel_mean, std=config.pixel_std)
 
     transform = Compose(
         [Resize(min_size, max_size), RandomHorizontalFlip(flip), ToTensor(), normalize]
