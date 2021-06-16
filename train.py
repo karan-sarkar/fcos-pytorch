@@ -144,7 +144,7 @@ def compare(p, q):
     mask1 = F.one_hot(cls_p1.max(1)[0].long(), 10) * mask1
     mask2 = F.one_hot(cls_p2.max(1)[0].long(), 10) * mask2
     
-    return (l1loss(cls_p1, mask2) + l1loss(cls_p1, mask2), mask1, 0)
+    return (l1loss(cls_p1, mask2) + l1loss(cls_p1, mask2), mask1.mean(), 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
