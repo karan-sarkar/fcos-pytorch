@@ -141,8 +141,8 @@ def compare(p, q):
     mask1 = cls_p1.max(1)[0].ge(0.5).float()
     mask2 = cls_p1.max(1)[0].ge(0.5).float()
     
-    mask1 = F.one_hot(cls_p1.max(1)[0], 10) * mask1
-    mask2 = F.one_hot(cls_p2.max(1)[0], 10) * mask2
+    mask1 = F.one_hot(cls_p1.max(1)[0].long(), 10) * mask1
+    mask2 = F.one_hot(cls_p2.max(1)[0].long(), 10) * mask2
     
     return (l1loss(cls_p1, mask2) + l1loss(cls_p1, mask2), 0, 0)
 
