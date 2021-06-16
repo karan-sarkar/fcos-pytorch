@@ -138,7 +138,7 @@ def compare(p, q):
     center_p1 = flatten(center_pred1, 1).sigmoid()
     center_p2 = flatten(center_pred2, 1).sigmoid()
     
-    mask = cls_p1.max(1)[0].ge(0.05).float()
+    mask = cls_p1.max(1)[0].ge(0.05)
     
     return (l1loss(cls_p1, cls_p2), rel_l1(box_p1[mask], box_p2[mask]) if mask.sum() > 0 else 0, l1loss(center_p1[mask], center_p2[mask])  if mask.sum() > 0 else 0)
 
