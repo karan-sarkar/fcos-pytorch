@@ -254,7 +254,6 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         
         discrep_loss = dloss.item()
-        mask = mask.item()
         cls_discrep, box_discrep, center_discrep = float(cls_discrep), float(box_discrep), float(center_discrep)
         losses.append(cls + box + center)
         dlosses.append(discrep_loss)
@@ -270,7 +269,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                     f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {loss_cls_target:.4f};'
                     f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
                     f'discrepancy: {discrep_loss:.4f};'
-                    f'avg: {avg:.4f}; discrep_avg: {davg:.4f}; mask: {mask:.4f}'
+                    f'avg: {avg:.4f}; discrep_avg: {davg:.4f};'
                 )
             )
         i+= 1
