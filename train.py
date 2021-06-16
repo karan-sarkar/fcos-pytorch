@@ -101,10 +101,11 @@ def flatten(cls_pred):
 
     cls_flat = []
     for i in range(len(cls_pred)):
-        cls_flat.append(cls_pred[i].permute(0, 2, 3, 1).reshape(-1, n_class))
+        cls_flat.append(cls_pred[i].permute(0, 2, 3, 1).reshape(cls_pred[i].size(0), -1))
 
     cls_flat = torch.cat(cls_flat, 0)
     return cls_flat
+
 
 def discrep(cls_pred1, cls_pred2):
     return 3 * nn.L1Loss()(flatten(cls_pred1).sigmoid(), flatten(cls_pred2).sigmoid())
@@ -121,26 +122,23 @@ def freeze(model, section, on):
 focal_loss = SigmoidFocalLoss(2.0, 0.25)
 l1loss = nn.L1Loss()
 
-def harden(cls_pred, device):
-    batch = cls_pred[0].shape[0]
-    cls_p = flatten(cls_pred).sigmoid()
+def rel_l1(x, y):
+    diff = (x - y) / (x + y)
+    return diff.abs().mean()
+    
+def compare(p, q):
+    cls_pred1, box_pred1, center_pred1 = p
+    cls_pred2, box_pred2, center_pred2 = q
     
     
-    mx = torch.argmax(cls_p, 1)
-    mask = cls_p.max(1)[0].ge(0.05).float()
-    mx = F.one_hot(mx, 10) * mask.view(-1, 1)
-    return ((torch.mean(torch.abs(cls_p -  mx), 1) * (9 * mask + 1)).mean(), float(mask.mean()))
-
-def compare(cls_pred1, cls_pred2):
-    batch = cls_pred1[0].shape[0]
     cls_p1 = flatten(cls_pred1).sigmoid()
     cls_p2 = flatten(cls_pred2).sigmoid()
+    box_p1 = flatten(box_pred1).relu()
+    box_p2 = flatten(box_pred2).relu()
+    center_p1 = flatten(center_pred1).sigmoid()
+    center_p2 = flatten(center_pred2).sigmoid()
     
-    
-    mx = torch.argmax(cls_p1, 1)
-    mask = cls_p1.max(1)[0].ge(0.05).float()
-    mx = F.one_hot(mx, 10) * mask.view(-1, 1)
-    return ((torch.mean(torch.abs(cls_p2 -  mx), 1) * (9 * mask + 1)).mean(), float(mask.mean()))
+    return (l1loss(cls_p1, cls_p2), rel_l1(box_p1, box_p2), l1loss(center_p1, center_p2))
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -219,8 +217,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
 
         (loss_dict2, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
         
-        dloss, mask = compare(p, q)
-        dloss += compare(q, p)[0]
+        cls_discrep, box_discrep, center_discrep = compare(p, q)
+        dloss = cls_discrep + box_discrep + center_discrep
         
         loss_reduced = reduce_loss_dict(loss_dict2)
         loss_cls_target = loss_reduced['loss_cls'].mean().item()
@@ -242,8 +240,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             loss_center = loss_dict['loss_center'].mean()
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
-            dloss, mask = compare(p, q)
-            dloss += compare(q, p)[0]
+            cls_discrep, box_discrep, center_discrep = compare(p, q)
+            dloss = cls_discrep + box_discrep + center_discrep
             loss = loss_cls + loss_box + loss_center
             
             loss_cls2 = loss_dict2['loss_cls'].mean()
@@ -260,6 +258,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         
         discrep_loss = dloss.item()
+        cls_discrep, box_discrep, center_discrep = cls_discrep.item(), box_discrep.item(), center_discrep.item()
         losses.append(cls + box + center)
         dlosses.append(discrep_loss)
         avg = sum(losses) / len(losses)
@@ -273,8 +272,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                 (
                     f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {loss_cls_target:.4f};'
                     f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
-                    f'discrepancy: {discrep_loss:.4f}'
-                    f'mask: {mask:.4f}'
+                    f'discrepancy: {discrep_loss:.4f}; cls_discrep: {cls_discrep:.4f}; box_discrep: {box_discrep:.4f}; center_discrep: {center_discrep:.4f}'
                     f'avg: {avg:.4f}; discrep_avg: {davg:.4f}; '
                 )
             )

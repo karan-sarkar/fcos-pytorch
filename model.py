@@ -231,7 +231,7 @@ class FCOS(nn.Module):
                 'loss_box': loss_box,
                 'loss_center': loss_center,
             }
-            return ((losses1, cls_pred1), (losses2, cls_pred2))
+            return ((losses1, (cls_pred1, box_pred1, center_pred1)), (losses2, (cls_pred2, box_pred2, center_pred2)))
 
         else:
             boxes1 = self.postprocessor(
