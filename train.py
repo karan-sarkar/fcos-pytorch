@@ -128,7 +128,8 @@ def harden(cls_pred, device):
     
     mx = torch.argmax(cls_p, 1)
     mx = F.one_hot(mx, 11)
-    return l1loss(cls_p, mx)
+    mask = cls_p1[:, 1:].max(1)[0].ge(0.05).float().mean()
+    return l1loss(cls_p, mx), mask
 
 def compare(cls_pred1, cls_pred2):
     batch = cls_pred1[0].shape[0]
@@ -169,7 +170,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         r = torch.range(0, len(targets) - 1).to(device)
 
-        (loss_dict, _) = model(images.tensors, targets=targets, r=r)
+        (loss_dict, p) = model(images.tensors, targets=targets, r=r)
+        (_, source_mask) = harden(p, device)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -181,7 +183,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         box = loss_reduced['loss_box'].mean().item()
         center = loss_reduced['loss_center'].mean().item()
         
-        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
+        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
         
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
@@ -210,7 +212,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
         
         (_, p) = model(target_images.tensors, targets=target_targets, r=r)
-        dloss = harden(p, device)
+        dloss, mask = harden(p, device)
         discrep = dloss.mean().item()
         loss -= dloss
         
@@ -239,7 +241,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
             '''
             (_, p) = model(target_images.tensors, targets=target_targets, r=r)
-            dloss = harden(p, device)
+            dloss, _ = harden(p, device)
             discrep = dloss.mean().item()
             loss = dloss
             
@@ -254,6 +256,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         dlosses.append(discrep)
         avg = sum(losses) / len(losses)
         davg = sum(dlosses) / len(dlosses)
+        mask = float(mask)
+        source_mask = float(source_mask)
         
         if i % 100 == 0:
             torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
@@ -264,6 +268,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                     f'epoch: {epoch + 1}; cls: {cls:.4f};'
                     f'box: {box:.4f}; center: {center:.4f}; '
                     f'avg: {avg:.4f}; davg: {davg:.8f}, discrep: {discrep:.4f}'
+                    f'mask: {mask:.4f}; 'source_mask: {source_mask:.4f};'
                 )
             )
         i+= 1
