@@ -138,13 +138,13 @@ def compare(p, q):
     center_p1 = flatten(center_pred1, 1).sigmoid()
     center_p2 = flatten(center_pred2, 1).sigmoid()
     
-    mask1 = cls_p1.max(1)[0].ge(0.5).float()
-    mask2 = cls_p1.max(1)[0].ge(0.5).float()
+    mask1 = cls_p1.max(1)[0].ge(0.5).float().view(-1, 1)
+    mask2 = cls_p1.max(1)[0].ge(0.5).float().view(-1, 1)
     
     mask1 = F.one_hot(cls_p1.max(1)[0].long(), 10) * mask1
     mask2 = F.one_hot(cls_p2.max(1)[0].long(), 10) * mask2
     
-    return (l1loss(cls_p1, mask2) + l1loss(cls_p1, mask2), 0, 0)
+    return (l1loss(cls_p1, mask2) + l1loss(cls_p1, mask2), mask1, 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -246,8 +246,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             loss_center = loss_dict['loss_center'].mean()
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
-            cls_discrep, box_discrep, center_discrep = compare(p, q)
-            dloss = cls_discrep + box_discrep + center_discrep
+            cls_discrep, mask, center_discrep = compare(p, q)
+            dloss = cls_discrep 
             loss = loss_cls + loss_box + loss_center
             
             loss_cls2 = loss_dict2['loss_cls'].mean()
@@ -264,6 +264,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         
         discrep_loss = dloss.item()
+        mask = mask.item()
         cls_discrep, box_discrep, center_discrep = float(cls_discrep), float(box_discrep), float(center_discrep)
         losses.append(cls + box + center)
         dlosses.append(discrep_loss)
@@ -279,7 +280,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                     f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {loss_cls_target:.4f};'
                     f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
                     f'discrepancy: {discrep_loss:.4f};'
-                    f'avg: {avg:.4f}; discrep_avg: {davg:.4f}; '
+                    f'avg: {avg:.4f}; discrep_avg: {davg:.4f}; mask: {mask:.4f}'
                 )
             )
         i+= 1
