@@ -131,20 +131,10 @@ def compare(p, q):
     cls_pred2, box_pred2, center_pred2 = q
     
     
-    cls_p1 = flatten(cls_pred1, 10).sigmoid()
-    cls_p2 = flatten(cls_pred2, 10).sigmoid()
-    box_p1 = flatten(box_pred1, 4).relu()
-    box_p2 = flatten(box_pred2, 4).relu()
-    center_p1 = flatten(center_pred1, 1).sigmoid()
-    center_p2 = flatten(center_pred2, 1).sigmoid()
+    cls_p1 = flatten(cls_pred1, 11).softmax(-1)
+    cls_p2 = flatten(cls_pred2, 11).softmax(-1)
     
-    mask1 = cls_p1.max(1)[0].ge(0.5).float().view(-1, 1)
-    mask2 = cls_p1.max(1)[0].ge(0.5).float().view(-1, 1)
-    
-    mask1 = F.one_hot(cls_p1.max(1)[0].long(), 10) * mask1
-    mask2 = F.one_hot(cls_p2.max(1)[0].long(), 10) * mask2
-    
-    return (l1loss(cls_p1, mask2) + l1loss(cls_p1, mask2), mask1.mean(), 0)
+    return (l1loss(cls_p1, cls_p2), 0, 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
