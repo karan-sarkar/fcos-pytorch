@@ -268,7 +268,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                     f'epoch: {epoch + 1}; cls: {cls:.4f};'
                     f'box: {box:.4f}; center: {center:.4f}; '
                     f'avg: {avg:.4f}; davg: {davg:.8f}, discrep: {discrep:.4f}'
-                    f'mask: {mask:.4f}; 'source_mask: {source_mask:.4f};'
+                    f'mask: {mask:.4f}; source_mask: {source_mask:.4f};'
                 )
             )
         i+= 1
