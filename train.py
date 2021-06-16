@@ -101,7 +101,7 @@ def flatten(cls_pred):
 
     cls_flat = []
     for i in range(len(cls_pred)):
-        cls_flat.append(cls_pred[i].permute(0, 2, 3, 1).reshape(cls_pred[i].size(0), -1))
+        cls_flat.append(cls_pred[i].permute(0, 2, 3, 1).reshape(-1))
 
     cls_flat = torch.cat(cls_flat, 0)
     return cls_flat
