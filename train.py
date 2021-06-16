@@ -95,13 +95,13 @@ def valid(args, epoch, loader, dataset, m, device):
     evaluate(dataset, preds)
     del preds
 
-def flatten(cls_pred):
+def flatten(cls_pred, col):
     batch = cls_pred[0].shape[0]
     n_class = cls_pred[0].shape[1]
 
     cls_flat = []
     for i in range(len(cls_pred)):
-        cls_flat.append(cls_pred[i].permute(0, 2, 3, 1).reshape(-1))
+        cls_flat.append(cls_pred[i].permute(0, 2, 3, 1).reshape(-1, col))
 
     cls_flat = torch.cat(cls_flat, 0)
     return cls_flat
@@ -131,14 +131,16 @@ def compare(p, q):
     cls_pred2, box_pred2, center_pred2 = q
     
     
-    cls_p1 = flatten(cls_pred1).sigmoid()
-    cls_p2 = flatten(cls_pred2).sigmoid()
-    box_p1 = flatten(box_pred1).relu()
-    box_p2 = flatten(box_pred2).relu()
-    center_p1 = flatten(center_pred1).sigmoid()
-    center_p2 = flatten(center_pred2).sigmoid()
+    cls_p1 = flatten(cls_pred1, 10).sigmoid()
+    cls_p2 = flatten(cls_pred2, 10).sigmoid()
+    box_p1 = flatten(box_pred1, 4).relu()
+    box_p2 = flatten(box_pred2, 4).relu()
+    center_p1 = flatten(center_pred1, 1).sigmoid()
+    center_p2 = flatten(center_pred2, 1).sigmoid()
     
-    return (l1loss(cls_p1, cls_p2), rel_l1(box_p1, box_p2), l1loss(center_p1, center_p2))
+    mask = cls_p1.max(1)[0].ge(0.05).float()
+    
+    return (l1loss(cls_p1, cls_p2), rel_l1(box_p1[mask], box_p2[mask]) if mask.sum() > 0 else 0, l1loss(center_p1[mask], center_p2[mask])  if mask.sum() > 0 else 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
