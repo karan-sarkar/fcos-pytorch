@@ -138,9 +138,13 @@ def compare(p, q):
     center_p1 = flatten(center_pred1, 1).sigmoid()
     center_p2 = flatten(center_pred2, 1).sigmoid()
     
-    mask = cls_p1.max(1)[0].ge(0.05)
+    mask1 = cls_p1.max(1)[0].ge(0.5).float()
+    mask2 = cls_p1.max(1)[0].ge(0.5).float()
     
-    return (l1loss(cls_p1, cls_p2), rel_l1(box_p1[mask], box_p2[mask]) if mask.sum() > 0 else 0, l1loss(center_p1[mask], center_p2[mask])  if mask.sum() > 0 else 0)
+    mask1 = F.one_hot(cls_p1.max(1)[0], 10) * mask1
+    mask2 = F.one_hot(cls_p2.max(1)[0], 10) * mask2
+    
+    return (l1loss(cls_p1, mask2) + l1loss(cls_p1, mask2), 0, 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -274,7 +278,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                 (
                     f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {loss_cls_target:.4f};'
                     f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
-                    f'discrepancy: {discrep_loss:.4f}; cls_discrep: {cls_discrep:.4f}; box_discrep: {box_discrep:.4f}; center_discrep: {center_discrep:.4f}'
+                    f'discrepancy: {discrep_loss:.4f};'
                     f'avg: {avg:.4f}; discrep_avg: {davg:.4f}; '
                 )
             )
