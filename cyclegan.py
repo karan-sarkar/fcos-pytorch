@@ -118,10 +118,12 @@ def train(args, epoch, loader, target_loader, cyclegan, c_opt, g_opt, device):
     losses = []
     dlosses = []
     for (source_x, _, _), (target_x, _, _) in zip(pbar, target_loader):
-        print(type(source_x))
-        print(source_x)
-        print(dir(source_x))
+        source_x = source_x.tensors
+        target_x = target_x.tensors
         
+        if source_x.shape != target_x.shape:
+            break
+
         source_x = source_x.to(device)
         target_x = target_x.to(device)
         
