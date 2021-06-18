@@ -66,17 +66,17 @@ def valid(args, epoch, loader, dataset, m, G1, device):
     for images, targets, ids in pbar:
         model.zero_grad()
 
-        images = images.to(device)
+        images = images.tensors.to(device)
         images = G1(images)
         targets = [target.to(device) for target in targets]
         r = torch.range(0, len(targets) - 1).to(device)
         model.eval()
-        pred = model(images.tensors, image_sizes=images.sizes, r=r)
+        pred = model(images, image_sizes=images.sizes, r=r)
         
         
         model.train()
         
-        (loss_dict, _) = model(images.tensors, targets=targets, r=r)
+        (loss_dict, _) = model(images, targets=targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -109,7 +109,7 @@ def train(args, epoch, loader, target_loader, cyclegan, c_opt, g_opt, device):
     C1, C2, G1, G2 = cyclegan
 
     if get_rank() == 0:
-        pbar = tqdm(loader, dynamic_ncols=True)
+        pbar = tqdm(zip(loader, target_loader), dynamic_ncols=True)
 
     else:
         pbar = loader
@@ -117,12 +117,9 @@ def train(args, epoch, loader, target_loader, cyclegan, c_opt, g_opt, device):
     i = 0
     losses = []
     dlosses = []
-    for (source_x, _, _), (target_x, _, _) in zip(pbar, target_loader):
+    for (source_x, _, _), (target_x, _, _) in pbar:
         source_x = source_x.tensors
         target_x = target_x.tensors
-        
-        if source_x.shape != target_x.shape:
-            break
 
         source_x = source_x.to(device)
         target_x = target_x.to(device)
