@@ -81,7 +81,6 @@ class Unet(nn.Module):
             output = F.avg_pool2d(output, kernel_size=2, stride=2, padding=0)
 
         output = self.conv(output)
-        features = output
         # apply up-sampling layers
         i = 0
         for transpose_conv, conv in zip(self.up_transpose_conv, self.up_conv):
@@ -101,7 +100,7 @@ class Unet(nn.Module):
             output = conv(output)
             
 
-        return output, features
+        return output
 
 
 class ConvBlock(nn.Module):
