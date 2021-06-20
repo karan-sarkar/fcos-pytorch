@@ -134,7 +134,7 @@ def compare(p, q):
     cls_p1 = flatten(cls_pred1, 11).softmax(-1)
     cls_p2 = flatten(cls_pred2, 11).softmax(-1)
     
-    return (l1loss(cls_p1, cls_p2), 0, 0)
+    return (10 * l1loss(cls_p1, cls_p2), 0, 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -372,7 +372,7 @@ if __name__ == '__main__':
     )
     
     if args.ckpt is not None:
-        (model, c_opt, g_opt) = torch.load('slim_fcos_' + str(args.ckpt) + '.pth')
+        (model, _, _) = torch.load('slim_fcos_' + str(args.ckpt) + '.pth')
         if isinstance(model, nn.DataParallel):
             model = model.module
         model = nn.DataParallel(model)
