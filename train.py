@@ -300,8 +300,8 @@ if __name__ == '__main__':
 
     source_set = COCODataset(args.path, 'train', preset_transform(args, train=True))
     target_set = COCODataset(args.path2, 'train', preset_transform(args, train=True))
-    source_valid_set = COCODataset(args.path, 'val', preset_transform(args, train=True))
-    target_valid_set = COCODataset(args.path2, 'val', preset_transform(args, train=True))
+    source_valid_set = COCODataset(args.path, 'val', preset_transform(args, train=False))
+    target_valid_set = COCODataset(args.path2, 'val', preset_transform(args, train=False))
   
     '''
     source_sample = np.random.permutation(len(source))
@@ -385,10 +385,11 @@ if __name__ == '__main__':
     model = model.to(device)
     
     for epoch in range(args.epoch):
-        train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
-        torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        train(args, epoch, source_loader, target_loader, model, c_opt, g_opt, device)
+        torch.save((model, c_opt, g_opt), 'slim_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        
         
        
         
