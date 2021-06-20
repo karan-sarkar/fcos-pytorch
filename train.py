@@ -153,8 +153,10 @@ def process(location, cls_pred, box_pred, center_pred):
         candid_nonzero = candid_id.nonzero()
         box_loc = candid_nonzero[:, 0]
         class_id = candid_nonzero[:, 1] + 1
-
+        
+        
         box_p = box_pred[i]
+        print(box_loc, box_loc.shape, box_p.shape)
         box_p = box_p * box_loc.float()
         loc = location * box_loc.float()
 
@@ -162,6 +164,7 @@ def process(location, cls_pred, box_pred, center_pred):
 
         if candid_id.sum().item() > top_n.item():
             cls_p, top_k_id = cls_p.topk(top_n, sorted=False)
+            print(top_k_id, top_k_id.shape, class_id.shape, box_p.shape)
             class_id = class_id * top_k_id.float()
             box_p = box_p * top_k_id.float()
             loc = loc * top_k_id.float()
