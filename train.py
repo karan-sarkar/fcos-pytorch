@@ -193,9 +193,11 @@ def compare(p, q):
     cls_p2 = flatten(cls_pred2, 11).softmax(-1)
     
     box1 = make_boxes(location1, cls_pred1, box_pred1, center_pred1)
-    box2 = make_boxes(location2, cls_pred2, box_pred2, center_pred2)
+    box2 = make_boxes(location2, cls_pred1, box_pred2, center_pred2)
+    box3 = make_boxes(location1, cls_pred2, box_pred1, center_pred1)
+    box4 = make_boxes(location2, cls_pred2, box_pred2, center_pred2)
     
-    return (10 * l1loss(cls_p1, cls_p2), rel_l1(box1, box2), 0)
+    return (10 * l1loss(cls_p1, cls_p2), rel_l1(box1, box2) + rel_l1(box3, box4), 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -275,7 +277,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         (loss_dict2, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
         
         cls_discrep, box_discrep, center_discrep = compare(p, q)
-        dloss = cls_discrep + box_discrep + center_discrep
+        dloss = cls_discrep + box_discrep
         
         loss_reduced = reduce_loss_dict(loss_dict2)
         loss_cls_target = loss_reduced['loss_cls'].mean().item()
@@ -298,7 +300,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
             cls_discrep, box_discrep, center_discrep = compare(p, q)
-            dloss = cls_discrep 
+            dloss = cls_discrep + box_discrep
             loss = loss_cls + loss_box + loss_center
             
             loss_cls2 = loss_dict2['loss_cls'].mean()
