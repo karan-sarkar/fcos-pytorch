@@ -176,13 +176,13 @@ def process(location, cls_pred, box_pred, center_pred):
             1,
         )
         results.append(detections)
-    return results.stack(0)
+    return torch.stack(results, 0)
 
 def make_boxes(location, cls_pred, box_pred, center_pred):
     boxes = []
     for loc, cls_p, box_p, center_p in zip(location, cls_pred, box_pred, center_pred):
         boxes.append(process(loc, cls_p, box_p, center_p))
-    return boxes.stack(0)
+    return torch.stack(boxes, 0)
         
 def compare(p, q):
     cls_pred1, box_pred1, center_pred1, location1 = p
