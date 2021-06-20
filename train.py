@@ -138,9 +138,9 @@ def process(location, cls_pred, box_pred, center_pred):
     center_pred = center_pred.view(batch, 1, height, width).permute(0, 2, 3, 1)
     center_pred = center_pred.reshape(batch, -1).sigmoid()
 
-    candid_ids = cls_pred > self.threshold
+    candid_ids = cls_pred > 0.05
     top_ns = candid_ids.view(batch, -1).sum(1)
-    top_ns = top_ns.clamp(max=self.top_n)
+    top_ns = top_ns.clamp(max=1000)
 
     cls_pred = cls_pred * center_pred[:, :, None]
 
@@ -177,6 +177,12 @@ def process(location, cls_pred, box_pred, center_pred):
         )
         results.append(detections)
     return results.stack(0)
+
+def make_boxes(location, cls_pred, box_pred, center_pred):
+    boxes = []
+    for loc, cls_p, box_p, center_p in zip(location, cls_pred, box_pred, center_pred):
+        boxes.append(process(loc, cls_p, box_p, center_p))
+    return boxes.stack(0)
         
 def compare(p, q):
     cls_pred1, box_pred1, center_pred1, location1 = p
@@ -186,8 +192,8 @@ def compare(p, q):
     cls_p1 = flatten(cls_pred1, 11).softmax(-1)
     cls_p2 = flatten(cls_pred2, 11).softmax(-1)
     
-    box1 = process(location1, cls_pred1, box_pred1, center_pred1)
-    box2 = process(location2, cls_pred2, box_pred2, center_pred2)
+    box1 = make_boxes(location1, cls_pred1, box_pred1, center_pred1)
+    box2 = make_boxes(location2, cls_pred2, box_pred2, center_pred2)
     
     return (10 * l1loss(cls_p1, cls_p2), rel_l1(box1, box2), 0)
 
