@@ -125,16 +125,71 @@ l1loss = nn.L1Loss()
 def rel_l1(x, y):
     diff = (x - y) / (x + y)
     return diff.abs().mean()
-    
+
+def process(location, cls_pred, box_pred, center_pred):
+    batch, channel, height, width = cls_pred.shape
+
+    cls_pred = cls_pred.view(batch, channel, height, width).permute(0, 2, 3, 1)
+    cls_pred = cls_pred.reshape(batch, -1, channel).softmax(-1).contiguous()[:, :, 1:]
+
+    box_pred = box_pred.view(batch, 4, height, width).permute(0, 2, 3, 1)
+    box_pred = box_pred.reshape(batch, -1, 4)
+
+    center_pred = center_pred.view(batch, 1, height, width).permute(0, 2, 3, 1)
+    center_pred = center_pred.reshape(batch, -1).sigmoid()
+
+    candid_ids = cls_pred > self.threshold
+    top_ns = candid_ids.view(batch, -1).sum(1)
+    top_ns = top_ns.clamp(max=self.top_n)
+
+    cls_pred = cls_pred * center_pred[:, :, None]
+
+    results = []
+
+    for i in range(batch):
+        cls_p = cls_pred[i]
+        candid_id = candid_ids[i]
+        cls_p = cls_p[candid_id]
+        candid_nonzero = candid_id.nonzero()
+        box_loc = candid_nonzero[:, 0]
+        class_id = candid_nonzero[:, 1] + 1
+
+        box_p = box_pred[i]
+        box_p = box_p * box_loc.float()
+        loc = location * box_loc.float()
+
+        top_n = top_ns[i]
+
+        if candid_id.sum().item() > top_n.item():
+            cls_p, top_k_id = cls_p.topk(top_n, sorted=False)
+            class_id = class_id * top_k_id.float()
+            box_p = box_p * top_k_id.float()
+            loc = loc * top_k_id.float()
+
+        detections = torch.stack(
+            [
+                loc[:, 0] - box_p[:, 0],
+                loc[:, 1] - box_p[:, 1],
+                loc[:, 0] + box_p[:, 2],
+                loc[:, 1] + box_p[:, 3],
+            ],
+            1,
+        )
+        results.append(detections)
+    return results.stack(0)
+        
 def compare(p, q):
-    cls_pred1, box_pred1, center_pred1 = p
-    cls_pred2, box_pred2, center_pred2 = q
+    cls_pred1, box_pred1, center_pred1, location1 = p
+    cls_pred2, box_pred2, center_pred2, location2 = q
     
     
     cls_p1 = flatten(cls_pred1, 11).softmax(-1)
     cls_p2 = flatten(cls_pred2, 11).softmax(-1)
     
-    return (10 * l1loss(cls_p1, cls_p2), 0, 0)
+    box1 = process(location1, cls_pred1, box_pred1, center_pred1)
+    box2 = process(location2, cls_pred2, box_pred2, center_pred2)
+    
+    return (10 * l1loss(cls_p1, cls_p2), rel_l1(box1, box2), 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -236,7 +291,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             loss_center = loss_dict['loss_center'].mean()
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
-            cls_discrep, mask, center_discrep = compare(p, q)
+            cls_discrep, box_discrep, center_discrep = compare(p, q)
             dloss = cls_discrep 
             loss = loss_cls + loss_box + loss_center
             
@@ -268,7 +323,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                 (
                     f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {loss_cls_target:.4f};'
                     f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
-                    f'discrepancy: {discrep_loss:.4f};'
+                    f'cls_discrep: {cls_discrep:.4f}; box_discrep: {box_discrep:.4f};'
                     f'avg: {avg:.4f}; discrep_avg: {davg:.4f};'
                 )
             )
