@@ -165,10 +165,12 @@ def process(location, cls_pred, box_pred, center_pred):
 
         if candid_id.sum().item() > top_n.item():
             cls_p, top_k_id = cls_p.topk(top_n, sorted=False)
-            print(top_k_id, top_k_id.shape, class_id.shape, box_p.shape)
-            class_id = class_id * top_k_id.float()
-            box_p = box_p * top_k_id.float()
-            loc = loc * top_k_id.float()
+            top_mask = F.one_hot(top_k_id, class_id.size(0)).sum(0).view(-1, 1).float()
+            class_id = class_id * top_mask
+            top_mask = F.one_hot(top_k_id, box_p.size(0)).sum(0).view(-1, 1).float()
+            box_p = box_p * top_mask
+            top_mask = F.one_hot(top_k_id, loc.size(0)).sum(0).view(-1, 1).float()
+            loc = loc * top_mask
 
         detections = torch.stack(
             [
