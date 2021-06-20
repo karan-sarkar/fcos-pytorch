@@ -156,7 +156,7 @@ def process(location, cls_pred, box_pred, center_pred):
         
         
         box_p = box_pred[i]
-        print(box_loc, box_loc.shape, box_p.shape)
+        box_loc = F.one_hot(box_loc, box_p.size(0)).sum(0).view(-1, 1)
         box_p = box_p * box_loc.float()
         loc = location * box_loc.float()
 
