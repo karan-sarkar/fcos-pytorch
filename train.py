@@ -196,8 +196,8 @@ def compare(p, q):
     center_p1 = flatten(center_pred1, 4).sigmoid()
     center_p2 = flatten(center_pred2, 4).sigmoid()
     
-    a1 = torch.einsum('na,nb->nbc', cls_p1, box_p1)
-    a2 = torch.einsum('na,nb->nbc', cls_p2, box_p2)
+    a1 = torch.einsum('na,nb->nab', cls_p1, box_p1)
+    a2 = torch.einsum('na,nb->nab', cls_p2, box_p2)
     
     
     return (rel_l1(a1, a2), 0, 0)
