@@ -156,9 +156,10 @@ def process(location, cls_pred, box_pred, center_pred):
         
         
         box_p = box_pred[i]
-        box_loc = F.one_hot(box_loc, box_p.size(0)).sum(0).view(-1, 1)
-        box_p = box_p * box_loc.float()
-        loc = location * box_loc.float()
+        box_mask = F.one_hot(box_loc, box_p.size(0)).sum(0).view(-1, 1).float()
+        box_p = box_p * box_mask
+        box_mask = F.one_hot(box_loc, location.size(0)).sum(0).view(-1, 1).float()
+        loc = location * box_mask
 
         top_n = top_ns[i]
 
