@@ -185,8 +185,8 @@ def make_boxes(location, cls_pred, box_pred, center_pred):
     return torch.cat(boxes, 0)
 
 def intersect(out, target):
-    pred_left, pred_top, pred_right, pred_bottom = out.unbind(1)
-    target_left, target_top, target_right, target_bottom = target.unbind(1)
+    pred_left, pred_top, pred_right, pred_bottom = out.clamp(min=0, max=1000).unbind(1)
+    target_left, target_top, target_right, target_bottom = target.clamp(min=0, max=1000).unbind(1)
 
     target_area = (target_left + target_right) * (target_top + target_bottom)
     pred_area = (pred_left + pred_right) * (pred_top + pred_bottom)
@@ -201,7 +201,7 @@ def intersect(out, target):
     area_intersect = w_intersect * h_intersect
     area_union = target_area + pred_area - area_intersect
 
-    ious = (area_intersect.clamp(min=0, max=1000) + 1) / (area_union.clamp(min=0, max=1000) + 1)
+    ious = (area_intersect + 1) / (area_union + 1)
     
     loss = -torch.log(ious)
     return loss.mean()
