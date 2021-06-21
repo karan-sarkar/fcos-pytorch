@@ -232,7 +232,7 @@ def diff(p, q):
     box_p2 = flatten(box_pred2, 4).relu()
     box = torch.cat([box_p1, box_p2], 0)
     
-    return (box.square().mean(0) - box.mean(1).square()).mean()
+    return (box.square().mean(0) - box.mean(0).square()).mean()
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
