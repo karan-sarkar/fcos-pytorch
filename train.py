@@ -219,7 +219,7 @@ def compare(p, q):
     center_p1 = flatten(center_pred1, 1).sigmoid()
     center_p2 = flatten(center_pred2, 1).sigmoid()
     
-    return (10 * l1loss(cls_p1, cls_p2), l1loss(box_p1, box_p2) / 1280, l1loss(center_p1, center_p2))
+    return (10 * l1loss(cls_p1, cls_p2), l1loss(box_p1, box_p2), l1loss(center_p1, center_p2))
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
