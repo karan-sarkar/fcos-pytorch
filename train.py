@@ -197,7 +197,7 @@ def compare(p, q):
     box3 = make_boxes(location1, cls_pred2, box_pred1, center_pred1)
     box4 = make_boxes(location2, cls_pred2, box_pred2, center_pred2)
     
-    return (10 * l1loss(cls_p1, cls_p2), rel_l1(box1, box2) + rel_l1(box3, box4), 0)
+    return (10 * l1loss(cls_p1, cls_p2), l1loss(box1, box2) + l1loss(box3, box4), 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
