@@ -276,7 +276,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         loss_center = loss_dict2['loss_center'].mean()
         
         variance = diff(a, b)
-        loss += loss_cls + loss_box + loss_center + style
+        loss += loss_cls + loss_box + loss_center + variance
         del loss_cls, loss_box, loss_center, loss_dict2
         
         loss.backward()
