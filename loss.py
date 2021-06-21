@@ -290,7 +290,7 @@ class FCOSLoss(nn.Module):
 
             box_loss = self.box_loss(box_flat, box_targets_flat, center_targets)
             
-            center_loss = self.center_loss(center_flat.nan_to_num(), center_targets.nan_to_num())
+            center_loss = self.center_loss(torch.nan_to_num(center_flat), torch.nan_to_num(center_targets))
 
         else:
             box_loss = box_flat.sum()
