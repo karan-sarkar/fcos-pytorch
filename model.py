@@ -210,10 +210,9 @@ class FCOS(nn.Module):
         # print(cls_pred, box_pred, center_pred)
         location1 = self.compute_location(features1)
         
-        features2 = self.fpn2(features)
         cls_pred2, box_pred2, center_pred2 = self.head2(features1)
         # print(cls_pred, box_pred, center_pred)
-        location2 = self.compute_location(features2)
+        location2 = self.compute_location(features1)
         if self.training:
             loss_cls, loss_box, loss_center = self.loss(
                 location1, cls_pred1, box_pred1, center_pred1, targets
