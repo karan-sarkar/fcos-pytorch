@@ -203,16 +203,7 @@ def intersect(out, target):
 
     ious = (area_intersect + 1) / (area_union + 1)
     
-    g_w_intersect = torch.max(pred_left, target_left) + torch.max(
-        pred_right, target_right
-    )
-    g_h_intersect = torch.max(pred_bottom, target_bottom) + torch.max(
-        pred_top, target_top
-    )
-    g_intersect = g_w_intersect * g_h_intersect + 1e-7
-    gious = ious - (g_intersect - area_union) / g_intersect
-
-    loss = 1 - gious
+    loss = -torch.log(ious)
     return loss.mean()
 def compare(p, q):
     cls_pred1, box_pred1, center_pred1, location1 = p
