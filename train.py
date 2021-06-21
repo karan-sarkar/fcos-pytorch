@@ -201,7 +201,7 @@ def intersect(out, target):
     area_intersect = w_intersect * h_intersect
     area_union = target_area + pred_area - area_intersect
 
-    ious = (area_intersect.relu() + 1) / (area_union.relu() + 1)
+    ious = (area_intersect.clamp(min=0, max=1000) + 1) / (area_union.clamp(min=0, max=1000) + 1)
     
     loss = -torch.log(ious)
     return loss.mean()
