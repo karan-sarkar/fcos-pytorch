@@ -281,8 +281,6 @@ class FCOSLoss(nn.Module):
 
         cls_loss = self.cls_loss(cls_flat, labels_flat.int()) / (pos_id.numel() + batch)
         
-        box_var = box_flat.square().mean() - box_flat.mean().square()
-        center_var = center_flat.square().mean() - center_flat.mean().square()
         
         box_flat = box_flat[pos_id]
         center_flat = center_flat[pos_id]
@@ -292,8 +290,8 @@ class FCOSLoss(nn.Module):
 
         if pos_id.numel() > 0:
             center_targets = self.compute_centerness_targets(box_targets_flat)
-            box_loss = self.box_loss(box_flat, box_targets_flat, center_targets) + 0.1 * box_var
-            center_loss = self.center_loss(center_flat, center_targets) + 0.1 * center_var
+            box_loss = self.box_loss(box_flat, box_targets_flat, center_targets)
+            center_loss = self.center_loss(center_flat, center_targets)
 
         else:
             box_loss = box_flat.sum()

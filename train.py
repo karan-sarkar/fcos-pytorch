@@ -222,7 +222,17 @@ def compare(p, q):
     mask1 = cls_p1[:, 1:].max(1)[0].view(-1, 1)
     mask2 = cls_p1[:, 1:].max(1)[0].view(-1, 1)
     
-    return (10 * l1loss(cls_p1, cls_p2), l1loss(box_p1 * mask1, box_p2 * mask2), l1loss(center_p1 * mask1, center_p2 * mask2))
+    return (10 * l1loss(cls_p1, cls_p2), 10 * l1loss(box_p1 * mask1, box_p2 * mask2), 10 * l1loss(center_p1 * mask1, center_p2 * mask2))
+
+def diff(p, q):
+    cls_pred1, box_pred1, center_pred1, location1 = p
+    cls_pred2, box_pred2, center_pred2, location2 = q
+    
+    box_p1 = flatten(box_pred1, 4).relu()
+    box_p2 = flatten(box_pred2, 4).relu()
+    box = torch.cat([box_p1, box_p2], 0)
+    
+    return (box.square().mean(0) - box.mean(1).square()).mean()
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -253,7 +263,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         target_targets = [target.to(device) for target in target_targets]
         r = torch.range(0, len(targets) - 1).to(device)
 
-        (loss_dict, _), (loss_dict2, _) = model(images.tensors, targets=targets, r=r)
+        (loss_dict, a), (loss_dict2, b) = model(images.tensors, targets=targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -265,7 +275,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         loss_box = loss_dict2['loss_box'].mean()
         loss_center = loss_dict2['loss_center'].mean()
         
-        loss += loss_cls + loss_box + loss_center 
+        variance = diff(a, b)
+        loss += loss_cls + loss_box + loss_center + style
         del loss_cls, loss_box, loss_center, loss_dict2
         
         loss.backward()
@@ -343,6 +354,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         discrep_loss = dloss.item()
         cls_discrep, box_discrep, center_discrep = float(cls_discrep), float(box_discrep), float(center_discrep)
+        variance = float(variance)
         losses.append(cls + box + center)
         dlosses.append(discrep_loss)
         avg = sum(losses) / len(losses)
@@ -356,7 +368,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                 (
                     f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {loss_cls_target:.4f};'
                     f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
-                    f'cls_discrep: {cls_discrep:.4f}; box_discrep: {box_discrep:.4f}; center_discrep: {center_discrep:.4f};'
+                    f'cls_discrep: {cls_discrep:.4f}; box_discrep: {box_discrep:.4f}; center_discrep: {center_discrep:.4f}; variance: {variance:.4f}'
                     f'avg: {avg:.4f}; discrep_avg: {davg:.4f};'
                 )
             )
