@@ -277,6 +277,10 @@ class FCOSLoss(nn.Module):
         box_targets_flat = torch.cat(box_targets_flat, 0)
 
         pos_id = torch.nonzero(labels_flat > 0).squeeze(1)
+        print(pos_id, pos_id.shape)
+        neg_id = torch.nonzero(labels_flat == 0).squeeze(1)
+        print(neg_id, neg_id.shape)
+        print(cls_flat.shape, box_flat.shape, center_flat.shape)
 
         cls_loss = self.cls_loss(cls_flat, labels_flat.int()) / (pos_id.numel() + batch)
 
