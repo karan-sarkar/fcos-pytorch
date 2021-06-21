@@ -289,6 +289,7 @@ class FCOSLoss(nn.Module):
             center_targets = self.compute_centerness_targets(box_targets_flat)
 
             box_loss = self.box_loss(box_flat, box_targets_flat, center_targets)
+            print(center_flat, '\n', center_targets)
             center_loss = self.center_loss(center_flat, center_targets)
 
         else:
