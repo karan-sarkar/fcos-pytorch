@@ -216,8 +216,8 @@ def compare(p, q):
     cls_p2 = flatten(cls_pred2, 11).softmax(-1)
     box_p1 = flatten(box_pred1, 4).relu()
     box_p2 = flatten(box_pred2, 4).relu()
-    center_p1 = flatten(center_p1, 1).sigmoid()
-    center_p2 = flatten(center_p2, 1).sigmoid()
+    center_p1 = flatten(center_pred1, 1).sigmoid()
+    center_p2 = flatten(center_pred2, 1).sigmoid()
     
     return (10 * l1loss(cls_p1, cls_p2), l1loss(box_p1, box_p2) / 1280, l1loss(center_p1, center_p2))
 
