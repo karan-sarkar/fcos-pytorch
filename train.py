@@ -183,7 +183,37 @@ def make_boxes(location, cls_pred, box_pred, center_pred):
     for loc, cls_p, box_p, center_p in zip(location, cls_pred, box_pred, center_pred):
         boxes.append(process(loc, cls_p, box_p, center_p))
     return torch.cat(boxes, 0)
-        
+
+def intersect(self, out, target, weight=None):
+    pred_left, pred_top, pred_right, pred_bottom = out.unbind(1)
+    target_left, target_top, target_right, target_bottom = target.unbind(1)
+
+    target_area = (target_left + target_right) * (target_top + target_bottom)
+    pred_area = (pred_left + pred_right) * (pred_top + pred_bottom)
+
+    w_intersect = torch.min(pred_left, target_left) + torch.min(
+        pred_right, target_right
+    )
+    h_intersect = torch.min(pred_bottom, target_bottom) + torch.min(
+        pred_top, target_top
+    )
+
+    area_intersect = w_intersect * h_intersect
+    area_union = target_area + pred_area - area_intersect
+
+    ious = (area_intersect + 1) / (area_union + 1)
+    
+    g_w_intersect = torch.max(pred_left, target_left) + torch.max(
+        pred_right, target_right
+    )
+    g_h_intersect = torch.max(pred_bottom, target_bottom) + torch.max(
+        pred_top, target_top
+    )
+    g_intersect = g_w_intersect * g_h_intersect + 1e-7
+    gious = ious - (g_intersect - area_union) / g_intersect
+
+    loss = 1 - gious
+    return loss.mean()
 def compare(p, q):
     cls_pred1, box_pred1, center_pred1, location1 = p
     cls_pred2, box_pred2, center_pred2, location2 = q
@@ -197,7 +227,7 @@ def compare(p, q):
     box3 = make_boxes(location1, cls_pred2, box_pred1, center_pred1)
     box4 = make_boxes(location2, cls_pred2, box_pred2, center_pred2)
     
-    return (10 * l1loss(cls_p1, cls_p2), l1loss(box1, box2) + l1loss(box3, box4), 0)
+    return (10 * l1loss(cls_p1, cls_p2), intersect(box1, box2) + intersect(box3, box4), 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
