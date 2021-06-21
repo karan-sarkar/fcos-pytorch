@@ -214,13 +214,12 @@ def compare(p, q):
     
     cls_p1 = flatten(cls_pred1, 11).softmax(-1)
     cls_p2 = flatten(cls_pred2, 11).softmax(-1)
+    box_p1 = flatten(box_pred1, 4).relu()
+    box_p2 = flatten(box_pred2, 4).relu()
+    center_p1 = flatten(center_p1, 1).sigmoid()
+    center_p2 = flatten(center_p2, 1).sigmoid()
     
-    box1 = make_boxes(location1, cls_pred1, box_pred1, center_pred1)
-    box2 = make_boxes(location2, cls_pred1, box_pred2, center_pred2)
-    box3 = make_boxes(location1, cls_pred2, box_pred1, center_pred1)
-    box4 = make_boxes(location2, cls_pred2, box_pred2, center_pred2)
-    
-    return (10 * l1loss(cls_p1, cls_p2), intersect(box1, box2) + intersect(box3, box4), 0)
+    return (10 * l1loss(cls_p1, cls_p2), l1loss(box_p1, box_p2) / 1280, l1loss(center_p1, center_p2))
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -300,7 +299,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         (loss_dict2, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
         
         cls_discrep, box_discrep, center_discrep = compare(p, q)
-        dloss = cls_discrep + box_discrep
+        dloss = cls_discrep + box_discrep + center_discrep
         
         loss_reduced = reduce_loss_dict(loss_dict2)
         loss_cls_target = loss_reduced['loss_cls'].mean().item()
@@ -323,7 +322,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
             cls_discrep, box_discrep, center_discrep = compare(p, q)
-            dloss = cls_discrep + box_discrep
+            dloss = cls_discrep + box_discrep + center_discrep
             loss = loss_cls + loss_box + loss_center
             
             loss_cls2 = loss_dict2['loss_cls'].mean()
@@ -354,7 +353,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                 (
                     f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {loss_cls_target:.4f};'
                     f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
-                    f'cls_discrep: {cls_discrep:.4f}; box_discrep: {box_discrep:.4f};'
+                    f'cls_discrep: {cls_discrep:.4f}; box_discrep: {box_discrep:.4f}; center_discrep: {center_discrep:.4f};'
                     f'avg: {avg:.4f}; discrep_avg: {davg:.4f};'
                 )
             )
