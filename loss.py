@@ -277,23 +277,20 @@ class FCOSLoss(nn.Module):
         box_targets_flat = torch.cat(box_targets_flat, 0)
 
         pos_id = torch.nonzero(labels_flat > 0).squeeze(1)
-        print(pos_id, pos_id.shape)
         neg_id = torch.nonzero(labels_flat == 0).squeeze(1)
-        print(neg_id, neg_id.shape)
-        print(cls_flat.shape, box_flat.shape, center_flat.shape)
 
         cls_loss = self.cls_loss(cls_flat, labels_flat.int()) / (pos_id.numel() + batch)
-
+        
+        mask = cls_flat.softmax(-1)[:, 1:].max(1)[0]
+        
+        box_neg = box_flat[neg_id]
+        center_neg = center_flat[neg_id]
+        
+        
         box_flat = box_flat[pos_id]
         center_flat = center_flat[pos_id]
         box_targets_flat = box_targets_flat[pos_id]
         
-        mask = torch.ones(box_flat.size(0))
-        mask[pos_id] = 0
-        box_neg = box_flat[mask]
-        mask = torch.ones(center_flat.size(0))
-        mask[pos_id] = 0
-        center_neg = center_flat[mask]
 
         if pos_id.numel() > 0:
             center_targets = self.compute_centerness_targets(box_targets_flat)
