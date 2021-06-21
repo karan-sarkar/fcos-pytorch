@@ -98,7 +98,7 @@ class FCOSLoss(nn.Module):
 
         self.cls_loss = SigmoidFocalLoss(gamma, alpha)
         self.box_loss = IOULoss(iou_loss_type)
-        self.center_loss = nn.BCELoss()
+        self.center_loss = nn.BCEWithLogitsLoss()
 
         self.center_sample = center_sample
         self.strides = fpn_strides
@@ -284,13 +284,18 @@ class FCOSLoss(nn.Module):
         #center_flat = center_flat[pos_id]
 
         #box_targets_flat = box_targets_flat[pos_id]
+        
+        box_flat[box_flat.isnan()] = 0
+        center_flat[center_flat.isnan()] = 0
+        box_targets_flat[box_targets_flat.isnan()] = 0
+        
 
         if pos_id.numel() > 0:
             center_targets = self.compute_centerness_targets(box_targets_flat)
-
+            center_targets[center_targets.isnan()] = 0
             box_loss = self.box_loss(box_flat, box_targets_flat, center_targets)
             
-            center_loss = self.center_loss(center_flat.sigmoid(), center_targets)
+            center_loss = self.center_loss(center_flat, center_targets)
 
         else:
             box_loss = box_flat.sum()
