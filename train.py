@@ -201,10 +201,12 @@ def intersect(out, target):
     area_intersect = w_intersect * h_intersect
     area_union = target_area + pred_area - area_intersect
 
-    ious = (area_intersect + 1) / (area_union + 1)
+    ious = (area_intersect.relu() + 1) / (area_union.relu() + 1)
     
     loss = -torch.log(ious)
     return loss.mean()
+    
+    
 def compare(p, q):
     cls_pred1, box_pred1, center_pred1, location1 = p
     cls_pred2, box_pred2, center_pred2, location2 = q
