@@ -148,7 +148,7 @@ class FCOSHead(nn.Module):
             centers.append(self.center_pred(cls_out))
 
             bbox_out = self.bbox_tower(feat)
-            bbox_out = scale(self.bbox_pred(bbox_out)).sigmoid() * 1280
+            bbox_out = scale(self.bbox_pred(bbox_out)).clamp(min = 0, max = 1280)
 
             bboxes.append(bbox_out)
 
