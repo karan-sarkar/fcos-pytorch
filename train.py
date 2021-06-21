@@ -184,7 +184,7 @@ def make_boxes(location, cls_pred, box_pred, center_pred):
         boxes.append(process(loc, cls_p, box_p, center_p))
     return torch.cat(boxes, 0)
 
-def intersect(self, out, target, weight=None):
+def intersect(out, target):
     pred_left, pred_top, pred_right, pred_bottom = out.unbind(1)
     target_left, target_top, target_right, target_bottom = target.unbind(1)
 
