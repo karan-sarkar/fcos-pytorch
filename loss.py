@@ -284,8 +284,12 @@ class FCOSLoss(nn.Module):
         center_flat = center_flat[pos_id]
         box_targets_flat = box_targets_flat[pos_id]
         
-        box_neg = box_flat[labels_flat == 0]
-        center_neg = center_flat[labels_flat == 0]
+        mask = torch.ones(box_flat.size(0))
+        mask[pos_id] = 0
+        box_neg = box_flat[mask]
+        mask = torch.ones(center_flat.size(0))
+        mask[pos_id] = 0
+        center_neg = center_flat[mask]
 
         if pos_id.numel() > 0:
             center_targets = self.compute_centerness_targets(box_targets_flat)
