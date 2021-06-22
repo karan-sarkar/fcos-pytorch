@@ -81,7 +81,7 @@ class SigmoidFocalLoss(nn.Module):
         conf_loss_hard_neg = conf_loss_neg[hard_negatives]  # (sum(n_hard_negatives))
 
         # As in the paper, averaged over positive priors only, although computed over both positive and hard-negative priors
-        return (conf_loss_hard_neg.sum() + conf_loss_pos.sum()) / n_positives.sum().float()
+        return (conf_loss_hard_neg.sum() + conf_loss_pos.sum()) / target.ge(0).sum().float()
         
         
         
