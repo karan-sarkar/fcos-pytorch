@@ -49,6 +49,6 @@ def get_args():
     args.size_divisible = 32
     args.center_sample = True
     args.pos_radius = 1.5
-    args.iou_loss_type = 'giou'
+    args.iou_loss_type = 'iou'
 
     return args
