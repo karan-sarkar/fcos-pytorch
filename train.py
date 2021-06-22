@@ -196,7 +196,7 @@ def compare(p, q):
     center_p1 = flatten(center_pred1, 4).sigmoid()
     center_p2 = flatten(center_pred2, 4).sigmoid()
     
-    mask = cls_p1[:, 1:].max(1)[0].ge(0.95).float()
+    mask = (cls_p1[:, 1:].max(1)[0].ge(0.95).float()) * (cls_p2[:, 1:].max(1)[0].ge(0.95).float())
     
     return (10 * l1loss(cls_p1, cls_p2), torch.mean(torch.abs(box_p1 -  box_p2).mean(1) * mask), mask.mean())
 
