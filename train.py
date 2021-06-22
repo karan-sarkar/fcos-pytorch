@@ -196,11 +196,7 @@ def compare(p, q):
     center_p1 = flatten(center_pred1, 4).sigmoid()
     center_p2 = flatten(center_pred2, 4).sigmoid()
     
-    a1 = torch.einsum('na,nb->nab', cls_p1, box_p1)
-    a2 = torch.einsum('na,nb->nab', cls_p2, box_p2)
-    
-    
-    return (10 * l1loss(cls_p1, cls_p2), 0, 0)
+    return (10 * l1loss(cls_p1, cls_p2), l1loss(box_p1, box_p2), box_p1.square().mean() + box_p2.square().mean())
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -279,7 +275,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
 
         (loss_dict2, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
         
-        cls_discrep, box_discrep, center_discrep = compare(p, q)
+        cls_discrep, box_discrep, box_mag = compare(p, q)
         dloss = cls_discrep + box_discrep
         
         loss_reduced = reduce_loss_dict(loss_dict2)
@@ -288,6 +284,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         loss_center_target = loss_reduced['loss_center'].mean().item()
         
         loss -= dloss
+        loss += box_mag
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         c_opt.step()
@@ -302,7 +299,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             loss_center = loss_dict['loss_center'].mean()
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
-            cls_discrep, box_discrep, center_discrep = compare(p, q)
+            cls_discrep, box_discrep, box_mag = compare(p, q)
             dloss = cls_discrep + box_discrep
             loss = loss_cls + loss_box + loss_center
             
@@ -312,6 +309,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             loss += loss_cls2 + loss_box2 + loss_center2
             
             loss += dloss
+            loss += box_mag
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             g_opt.step()
