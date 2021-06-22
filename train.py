@@ -198,7 +198,7 @@ def compare(p, q):
     
     mask = (cls_p1[:, 1:].max(1)[0].ge(args.mask).float()) * (cls_p2[:, 1:].max(1)[0].ge(args.mask).float())
     
-    return (10 * l1loss(cls_p1, cls_p2), 100 * torch.mean(torch.abs(box_p1 -  box_p2).mean(1) * mask), mask.sum())
+    return (10 * l1loss(cls_p1, cls_p2), 100 * torch.mean(torch.abs(box_p1 -  box_p2).mean(1) * mask), mask.sum(), mask.mean())
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -277,7 +277,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
 
         (loss_dict2, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
         
-        cls_discrep, box_discrep, box_mag = compare(p, q)
+        cls_discrep, box_discrep, box_mag,_ = compare(p, q)
         dloss = cls_discrep + box_discrep
         
         loss_reduced = reduce_loss_dict(loss_dict2)
@@ -300,7 +300,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             loss_center = loss_dict['loss_center'].mean()
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
-            cls_discrep, box_discrep, mask = compare(p, q)
+            cls_discrep, box_discrep, mask, m = compare(p, q)
             dloss = cls_discrep + box_discrep
             loss = loss_cls + loss_box + loss_center
             
@@ -319,7 +319,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         discrep_loss = dloss.item()
         cls_discrep, box_discrep, mask = float(cls_discrep), float(box_discrep), float(mask)
-        box_discrep = box_discrep if mask == 0 else box_discrep / mask
+        box_discrep = box_discrep if float(m) == 0 else box_discrep / float(m)
         losses.append(cls + box + center)
         dlosses.append(discrep_loss)
         avg = sum(losses) / len(losses)
