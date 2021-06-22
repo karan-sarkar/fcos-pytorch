@@ -191,13 +191,14 @@ def compare(p, q):
     
     cls_p1 = flatten(cls_pred1, 11).softmax(-1)
     cls_p2 = flatten(cls_pred2, 11).softmax(-1)
+    box1 = flatten(box_pred1, 4)
+    box2 = flatten(box_pred2, 4)
     
-    box1 = make_boxes(location1, cls_pred1, box_pred1, center_pred1).clamp(min=0,max=1280)
-    box2 = make_boxes(location2, cls_pred1, box_pred2, center_pred2).clamp(min=0,max=1280)
-    box3 = make_boxes(location1, cls_pred2, box_pred1, center_pred1).clamp(min=0,max=1280)
-    box4 = make_boxes(location2, cls_pred2, box_pred2, center_pred2).clamp(min=0,max=1280)
+    mask1 = cls_p1.max(1)[0].view(-1, 1)
+    mask2 = cls_p2.max(1)[0].view(-1, 1)
     
-    return (10 * l1loss(cls_p1, cls_p2), l1loss(box1, box2) + l1loss(box3, box4), 0)
+    
+    return (10 * l1loss(cls_p1, cls_p2), l1loss(box1 * mask2, box2 * mask1), 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
