@@ -196,9 +196,9 @@ def compare(p, q):
     center_p1 = flatten(center_pred1, 4).sigmoid()
     center_p2 = flatten(center_pred2, 4).sigmoid()
     
-    mask = (cls_p1[:, 1:].max(1)[0].ge(0.95).float()) * (cls_p2[:, 1:].max(1)[0].ge(0.95).float())
+    mask = (cls_p1[:, 1:].max(1)[0].ge(args.mask).float()) * (cls_p2[:, 1:].max(1)[0].ge(args.mask).float())
     
-    return (10 * l1loss(cls_p1, cls_p2), torch.mean(torch.abs(box_p1 -  box_p2).mean(1) * mask), mask.mean())
+    return (10 * l1loss(cls_p1, cls_p2), torch.mean(torch.abs(box_p1 -  box_p2).mean(1) * mask), mask.sum())
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -332,7 +332,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                 (
                     f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {loss_cls_target:.4f};'
                     f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
-                    f'cls_discrep: {cls_discrep:.4f}; box_discrep: {box_discrep:.4f}; mask: {mask:.8f};'
+                    f'cls_discrep: {cls_discrep:.4f}; box_discrep: {box_discrep:.4f}; mask: {mask:.4f};'
                     f'avg: {avg:.4f}; discrep_avg: {davg:.4f};'
                 )
             )
