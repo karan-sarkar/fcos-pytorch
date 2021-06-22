@@ -198,7 +198,7 @@ def compare(p, q):
     mask2 = cls_p2[:, 1:].max(1)[0].view(-1, 1)
     
     
-    return (10 * l1loss(cls_p1, cls_p2), l1loss(box1 * mask2, box2 * mask1), 0)
+    return (10 * l1loss(cls_p1, cls_p2), 0, 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
