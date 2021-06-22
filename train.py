@@ -200,7 +200,7 @@ def compare(p, q):
     a2 = torch.einsum('na,nb->nab', cls_p2, box_p2)
     
     
-    return (l1loss(cls_p1, cls_p2), 0, 0)
+    return (10 * l1loss(cls_p1, cls_p2), 0, 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
