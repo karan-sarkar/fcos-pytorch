@@ -318,7 +318,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         
         discrep_loss = dloss.item()
-        cls_discrep, box_discrep, box_mag = float(cls_discrep), float(box_discrep), float(box_mag.sqrt())
+        cls_discrep, box_discrep, mask = float(cls_discrep), float(box_discrep), float(mask)
+        box_discrep = box_discrep if mask == 0 else box_discrep / mask
         losses.append(cls + box + center)
         dlosses.append(discrep_loss)
         avg = sum(losses) / len(losses)
