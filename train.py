@@ -194,8 +194,8 @@ def compare(p, q):
     box1 = flatten(box_pred1, 4)
     box2 = flatten(box_pred2, 4)
     
-    mask1 = cls_p1.max(1)[0].view(-1, 1)
-    mask2 = cls_p2.max(1)[0].view(-1, 1)
+    mask1 = cls_p1[:, 1:].max(1)[0].view(-1, 1)
+    mask2 = cls_p2[:, 1:].max(1)[0].view(-1, 1)
     
     
     return (10 * l1loss(cls_p1, cls_p2), l1loss(box1 * mask2, box2 * mask1), 0)
