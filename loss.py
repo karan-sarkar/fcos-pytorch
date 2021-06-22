@@ -284,7 +284,7 @@ class FCOSLoss(nn.Module):
         #center_flat = center_flat[pos_id]
 
         #box_targets_flat = box_targets_flat[pos_id]
-        print(box_target_flat)
+        print(box_targets_flat)
         box_flat[box_flat.isnan()] = 0
         box_targets_flat[box_targets_flat.isnan()] = 0
         
