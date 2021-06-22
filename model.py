@@ -148,7 +148,7 @@ class FCOSHead(nn.Module):
             centers.append(self.center_pred(cls_out))
 
             bbox_out = self.bbox_tower(feat)
-            bbox_out = torch.exp(scale(self.bbox_pred(bbox_out)))
+            bbox_out = torch.sigmoid(scale(self.bbox_pred(bbox_out))) * 1280
 
             bboxes.append(bbox_out)
 

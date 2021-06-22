@@ -286,14 +286,13 @@ class FCOSLoss(nn.Module):
         #box_targets_flat = box_targets_flat[pos_id]
         
         box_flat[box_flat.isnan()] = 0
-        center_flat[center_flat.isnan()] = 0
         box_targets_flat[box_targets_flat.isnan()] = 0
         
         if pos_id.numel() > 0:
             center_targets = self.compute_centerness_targets(box_targets_flat)
 
             box_loss = self.box_loss(box_flat, box_targets_flat, center_targets)
-            center_loss = self.center_loss(center_flat, center_targets)
+            center_loss = self.center_loss(center_flat[pos_id], center_targets[pos_id])
 
         else:
             box_loss = box_flat.sum()
