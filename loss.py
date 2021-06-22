@@ -66,6 +66,8 @@ class SigmoidFocalLoss(nn.Module):
         self.alpha = alpha
 
     def forward(self, out, target):
+        return nn.CrossEntropyLoss(out, target)
+        '''
         n_class = out.shape[1]
         class_ids = torch.arange(
             n_class, dtype=target.dtype, device=target.device
@@ -86,6 +88,7 @@ class SigmoidFocalLoss(nn.Module):
         )
 
         return loss.sum()
+        '''
 
 
 class FCOSLoss(nn.Module):
