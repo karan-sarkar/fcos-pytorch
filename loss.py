@@ -284,7 +284,12 @@ class FCOSLoss(nn.Module):
         #center_flat = center_flat[pos_id]
 
         #box_targets_flat = box_targets_flat[pos_id]
+        
+        box_flat = box_flat.nan_to_num()
+        center_flat = center_flat.nan_to_num()
 
+        box_targets_flat = box_targets_flat.nan_to_num()
+        
         if pos_id.numel() > 0:
             center_targets = self.compute_centerness_targets(box_targets_flat)
 
