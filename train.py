@@ -189,8 +189,8 @@ def compare(p, q):
     cls_pred2, box_pred2, center_pred2, location2 = q
     
     
-    cls_p1 = flatten(cls_pred1, 11).softmax(-1)[:, 1:]
-    cls_p2 = flatten(cls_pred2, 11).softmax(-1)[:, 1:]
+    cls_p1 = flatten(cls_pred1, 11).softmax(-1)
+    cls_p2 = flatten(cls_pred2, 11).softmax(-1)
     box_p1 = flatten(box_pred1, 4).relu()
     box_p2 = flatten(box_pred2, 4).relu()
     center_p1 = flatten(center_pred1, 4).sigmoid()
@@ -200,7 +200,7 @@ def compare(p, q):
     a2 = torch.einsum('na,nb->nab', cls_p2, box_p2)
     
     
-    return (rel_l1(a1, a2), 0, 0)
+    return (rel_l1(cls_p1, cls_p2), 0, 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -383,12 +383,8 @@ if __name__ == '__main__':
     model = FCOS(args, backbone)
     model = nn.DataParallel(model)
     
-    print([n for n, p in model.named_parameters() if ('head' not in n and 'fpn' not in n)])
-    print('\n')
-    print([n for n, p in model.named_parameters() if ('head' in n or 'fpn' in n)])
-    
-    bottom = [p for n, p in model.named_parameters() if ('head' not in n and 'fpn' not in n)]
-    top = [p for n, p in model.named_parameters() if ('head' in n or 'fpn' in n)]
+    bottom = [p for n, p in model.named_parameters() if ('head' not in n)]
+    top = [p for n, p in model.named_parameters() if ('head' in n)]
 
     g_opt = optim.SGD(
         bottom,
