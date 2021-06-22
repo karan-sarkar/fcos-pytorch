@@ -196,7 +196,9 @@ def compare(p, q):
     center_p1 = flatten(center_pred1, 4).sigmoid()
     center_p2 = flatten(center_pred2, 4).sigmoid()
     
-    return (10 * l1loss(cls_p1, cls_p2), l1loss(box_p1, box_p2), box_p1.square().mean() + box_p2.square().mean())
+    mask = cls_p1[:, 1:].max(1)[0].ge(0.95).float()
+    
+    return (10 * l1loss(cls_p1, cls_p2), torch.mean(torch.abs(box_p1 -  box_p2).mean(1) * mask), mask.mean())
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -284,7 +286,6 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         loss_center_target = loss_reduced['loss_center'].mean().item()
         
         loss -= dloss
-        loss += box_mag
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         c_opt.step()
@@ -299,7 +300,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             loss_center = loss_dict['loss_center'].mean()
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
-            cls_discrep, box_discrep, box_mag = compare(p, q)
+            cls_discrep, box_discrep, mask = compare(p, q)
             dloss = cls_discrep + box_discrep
             loss = loss_cls + loss_box + loss_center
             
@@ -331,7 +332,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
                 (
                     f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {loss_cls_target:.4f};'
                     f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
-                    f'cls_discrep: {cls_discrep:.4f}; box_discrep: {box_discrep:.4f}; box_mag: {box_mag:.4f};'
+                    f'cls_discrep: {cls_discrep:.4f}; box_discrep: {box_discrep:.4f}; mask: {mask:.4f};'
                     f'avg: {avg:.4f}; discrep_avg: {davg:.4f};'
                 )
             )
