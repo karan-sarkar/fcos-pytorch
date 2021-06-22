@@ -198,7 +198,7 @@ def compare(p, q):
     
     mask = (cls_p1[:, 1:].max(1)[0].ge(args.mask).float()) * (cls_p2[:, 1:].max(1)[0].ge(args.mask).float())
     
-    return (l1loss(cls_p1, cls_p2), 1000 * torch.mean(torch.abs(box_p1 -  box_p2).mean(1) * mask), mask.sum(), mask.mean())
+    return (100 * l1loss(cls_p1, cls_p2), 1000 * torch.mean(torch.abs(box_p1 -  box_p2).mean(1) * mask), mask.sum(), mask.mean())
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
