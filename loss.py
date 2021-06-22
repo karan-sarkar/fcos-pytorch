@@ -66,7 +66,25 @@ class SigmoidFocalLoss(nn.Module):
         self.alpha = alpha
 
     def forward(self, out, target):
-        return 10000 * nn.CrossEntropyLoss()(out, target.long())
+        conf_loss_all = nn.CrossEntropyLoss(reduce=False)(out, target.long())
+        
+        # We already know which priors are positive
+        conf_loss_pos = conf_loss_all[target == 0]  # (sum(n_positives))
+
+        # Next, find which priors are hard-negative
+        # To do this, sort ONLY negative priors in each image in order of decreasing loss and take top n_hard_negatives
+        conf_loss_neg = conf_loss_all.clone()  # (N, 8732)
+        conf_loss_neg[target == 0] = 0.  # (N, 8732), positive priors are ignored (never in top n_hard_negatives)
+        conf_loss_neg, _ = conf_loss_neg.sort(dim=0, descending=True)  # (N, 8732), sorted by decreasing hardness
+        hardness_ranks = torch.LongTensor(range(conf_loss_neg.size(0))).to(target.device)  # (N, 8732)
+        hard_negatives = hardness_ranks < target.ge(0).sum() * 3  # (N, 8732)
+        conf_loss_hard_neg = conf_loss_neg[hard_negatives]  # (sum(n_hard_negatives))
+
+        # As in the paper, averaged over positive priors only, although computed over both positive and hard-negative priors
+        return (conf_loss_hard_neg.sum() + conf_loss_pos.sum()) / n_positives.sum().float()
+        
+        
+        
         '''
         n_class = out.shape[1]
         class_ids = torch.arange(
