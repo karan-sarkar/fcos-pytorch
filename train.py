@@ -198,7 +198,7 @@ def compare(p, q):
     
     #mask = (cls_p1[:, 1:].max(1)[0].ge(args.mask).float()) * (cls_p2[:, 1:].max(1)[0].ge(args.mask).float())
     
-    return (100 * l1loss(cls_p1[:, 1:], cls_p2[:, 1:]), 0, 0, 0)
+    return (l1loss(cls_p1[:, 1:], cls_p2[:, 1:]), 0, 0, 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
