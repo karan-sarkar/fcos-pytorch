@@ -191,6 +191,7 @@ def compare(p, q):
     
     cls_p1 = flatten(cls_pred1, 11).softmax(-1)
     cls_p2 = flatten(cls_pred2, 11).softmax(-1)
+    print(cls_p1.shape, cls_p1)
     box_p1 = flatten(box_pred1, 4).relu()
     box_p2 = flatten(box_pred2, 4).relu()
     center_p1 = flatten(center_pred1, 4).sigmoid()
