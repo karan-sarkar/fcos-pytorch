@@ -147,7 +147,7 @@ class FCOSHead(nn.Module):
             logits.append(self.cls_pred(cls_out))
             centers.append(self.center_pred(cls_out))
 
-            bbox_out = self.bbox_tower(feat)
+            bbox_out = self.cls_tower(feat)
             bbox_out = torch.exp(scale(self.bbox_pred(bbox_out)))
 
             bboxes.append(bbox_out)
