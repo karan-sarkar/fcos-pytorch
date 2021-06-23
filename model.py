@@ -219,17 +219,17 @@ class FCOS(nn.Module):
                 location1, cls_pred1, box_pred1, center_pred1, targets
             )
             losses1 = {
-                'loss_cls': loss_cls,
-                'loss_box': loss_box,
-                'loss_center': loss_center,
+                'loss_cls': 10 * loss_cls,
+                'loss_box': 10 * loss_box,
+                'loss_center': 10 * loss_center,
             }
             loss_cls, loss_box, loss_center = self.loss(
                 location2, cls_pred2, box_pred2, center_pred2, targets
             )
             losses2 = {
-                'loss_cls': loss_cls,
-                'loss_box': loss_box,
-                'loss_center': loss_center,
+                'loss_cls': 10 * loss_cls,
+                'loss_box': 10 * loss_box,
+                'loss_center': 10 * loss_center,
             }
             return ((losses1, (cls_pred1, box_pred1, center_pred1, location1)), (losses2, (cls_pred2, box_pred2, center_pred2, location2)))
 
