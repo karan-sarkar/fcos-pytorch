@@ -9,7 +9,7 @@ import numpy as np
 
 from loss import SigmoidFocalLoss
 from argument import get_args
-from backbone import vovnet57, vovnet27_slim
+from backbone import vovnet57, vovnet27_slim, vovnet39
 from dataset import COCODataset, collate_fn, CustomSubset
 from model import FCOS
 from transform import preset_transform
@@ -378,7 +378,7 @@ if __name__ == '__main__':
     target_valid_set = CustomSubset(target, target_sample[int(0.9 * len(target_sample)):])
     '''
 
-    backbone = vovnet57(pretrained=False)
+    backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
     model = nn.DataParallel(model)
     
