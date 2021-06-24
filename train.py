@@ -312,7 +312,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
             cls_discrep, box_discrep, mask, m = compare(p, q)
             dloss = cls_discrep + box_discrep
-            loss = dloss
+            loss = 100 * dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             g_opt.step()
