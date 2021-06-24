@@ -300,9 +300,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             loss_box = loss_dict['loss_box'].mean()
             loss_center = loss_dict['loss_center'].mean()
             
-            (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
-            cls_discrep, box_discrep, mask, m = compare(p, q)
-            dloss = cls_discrep + box_discrep
+
             loss = loss_cls + loss_box + loss_center
             
             loss_cls2 = loss_dict2['loss_cls'].mean()
@@ -310,6 +308,10 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             loss_center2 = loss_dict2['loss_center'].mean()
             loss += loss_cls2 + loss_box2 + loss_center2
             '''
+            
+            (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
+            cls_discrep, box_discrep, mask, m = compare(p, q)
+            dloss = cls_discrep + box_discrep
             loss = dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
