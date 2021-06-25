@@ -133,13 +133,13 @@ def harden(cls_pred, device):
 
 def compare(cls_pred1, cls_pred2):
     batch = cls_pred1[0].shape[0]
-    cls_p1 = flatten(cls_pred1).sigmoid()
-    cls_p2 = flatten(cls_pred2).sigmoid()
+    cls_p1 = flatten(cls_pred1).softmax(-1)
+    cls_p2 = flatten(cls_pred2).softmax(-1)
     
     
     mx = torch.argmax(cls_p1, 1)
     mask = cls_p1.max(1)[0].ge(0.05).float()
-    mx = F.one_hot(mx, 10) * mask.view(-1, 1)
+    mx = F.one_hot(mx, 11) * mask.view(-1, 1)
     return ((torch.mean(torch.abs(cls_p2 -  mx), 1)).mean(), float(mask.mean()))
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
