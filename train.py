@@ -126,7 +126,7 @@ def harden(cls_pred, device):
     cls_p = flatten(cls_pred).softmax(1)[:, 1:]
     
     
-    mask = cls_p[:, 1:].max(1)[0].ge(0.01).float()
+    mask = cls_p.max(1)[0].ge(0.01).float()
     mx = torch.argmax(cls_p, 1)
     mx = F.one_hot(mx, 10)
    
