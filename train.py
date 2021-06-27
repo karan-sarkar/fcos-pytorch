@@ -119,17 +119,18 @@ def freeze(model, section, on):
         i += 1
 
 focal_loss = SigmoidFocalLoss(2.0, 0.25)
-l1loss = nn.L1Loss()
+l1loss = nn.L1Loss(reduction='none')
 
 def harden(cls_pred, device):
     batch = cls_pred[0].shape[0]
-    cls_p = flatten(cls_pred).softmax(1)
+    cls_p = flatten(cls_pred).softmax(1)[:, 1:]
     
     
+    mask = cls_p[:, 1:].max(1)[0].ge(0.01).float().mean()
     mx = torch.argmax(cls_p, 1)
-    mx = F.one_hot(mx, 11)
-    mask = cls_p[:, 1:].max(1)[0].ge(0.05).float().mean()
-    return l1loss(cls_p, mx), mask
+    mx = F.one_hot(mx, 10)
+   
+    return (l1loss(cls_p, mx) *  (1 - mask) * 98 + 1)).mean(), mask
 
 def compare(cls_pred1, cls_pred2):
     batch = cls_pred1[0].shape[0]
