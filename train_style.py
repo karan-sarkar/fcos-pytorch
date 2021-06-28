@@ -173,6 +173,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         except:
             discrep = torch.zeros(1).to(device)
         
+        del loss_cls, loss_box, loss_center, loss_dict, p, preds
         
         g_opt.zero_grad()
         loss.backward()
@@ -196,12 +197,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         loss = loss_cls + loss_box + loss_center 
         
-        loss_reduced = reduce_loss_dict(loss_dict)
-        cls = float(loss_reduced['loss_cls'].mean().item())
-        box = float(loss_reduced['loss_box'].mean().item())
-        center = float(loss_reduced['loss_center'].mean().item())
-        
-        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
+        del loss_cls, loss_box, loss_center, loss_dict, p
         
         model.eval()
         preds, target_style = model.module(target_images.tensors, image_sizes=target_images.sizes, r=r, style=True)
@@ -224,6 +220,8 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
                 discrep = torch.zeros(1).to(device)
         except:
             discrep = torch.zeros(1).to(device)
+        
+        del loss_cls, loss_box, loss_center, loss_dict, p, preds
         style_loss = (source_style - target_style).pow(2).mean()
         loss += 0.001 * style_loss
        
