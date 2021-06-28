@@ -11,7 +11,7 @@ from AugmentedDataset import AugmentedDataset
 from loss import SigmoidFocalLoss
 from argument import get_args
 from backbone import vovnet57, vovnet27_slim
-from dataset import COCODataset, collate_fx, CustomSubset
+from dataset import COCODataset, collate_fx, collate_fn, CustomSubset
 from model import FCOS
 from transform import preset_transform
 from evaluate import evaluate
