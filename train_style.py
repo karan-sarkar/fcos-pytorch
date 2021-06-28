@@ -370,8 +370,10 @@ if __name__ == '__main__':
         model = nn.DataParallel(model)
     else:
         args.ckpt = 0
-    for g in opt.param_groups:
+    for g in c_opt.param_groups:
         g['lr'] = args.lr
+    for g in g_opt.param_groups:
+        g['lr'] = args.lr2
     
     for epoch in range(args.epoch):
         train(args, epoch, source_loader, target_loader, model, ema_model, c_opt, g_opt, device)
