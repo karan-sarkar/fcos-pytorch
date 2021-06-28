@@ -302,7 +302,7 @@ if __name__ == '__main__':
         train(args, epoch, source_loader, unlabeled_loader, model, ema_model, opt, device, sample)
         torch.save((model, opt, ema_model, sample), 'fix_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         if epoch > 0 and epoch % 30 == 0:
-            valid(args, epoch, source_valid_loader, source_valid_set, model, device)
+            valid(args, epoch, source_valid_loader, source_valid_set, ema_model.ema, device)
         
         
        
