@@ -262,13 +262,6 @@ if __name__ == '__main__':
             broadcast_buffers=False,
         )
     
-
-    source_loader = DataLoader(
-        source_train_set,
-        batch_size=args.batch,
-        sampler = data_sampler(source_train_set, True, args.distributed),
-        collate_fn=collate_fx(args),
-    )
     unlabeled_loader = DataLoader(
         unlabeled_set,
         batch_size=args.batch_val,
@@ -295,6 +288,13 @@ if __name__ == '__main__':
         g['lr'] = args.lr
     
     for epoch in range(args.epoch):
+        source_train_set = AugmentedDataset(source_set, source_aug_set, np.random.permutation(sample))
+        source_loader = DataLoader(
+            source_train_set,
+            batch_size=args.batch,
+            sampler = data_sampler(source_train_set, False, args.distributed),
+            collate_fn=collate_fx(args),
+        )
         train(args, epoch, source_loader, unlabeled_loader, model, opt, device)
         torch.save((model, opt), 'fix_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, source_valid_loader, source_valid_set, model, device)
