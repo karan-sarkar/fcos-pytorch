@@ -223,7 +223,8 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         except:
             discrep = torch.zeros(1).to(device)
             del preds
-        style_loss = 0.00001 * (source_style.mean(0) - target_style.mean(0)).pow(2).mean()
+        #0.00001
+        style_loss = args.mul * (source_style.mean(0) - target_style.mean(0)).pow(2).mean()
         loss +=  style_loss
         del source_style, target_style
         loss.backward()
