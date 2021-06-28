@@ -3,6 +3,7 @@ import random
 import torch
 import torchvision
 from torchvision.transforms import functional as F
+from randaugment import RandAugment
 
 
 class Compose:
@@ -94,7 +95,7 @@ class Normalize:
         return img, target
 
 
-def preset_transform(config, train=True):
+def preset_transform(config, train=True, augment=False):
     if train:
         if config.train_min_size_range[0] == -1:
             min_size = config.train_min_size
@@ -115,9 +116,15 @@ def preset_transform(config, train=True):
         flip = 0
 
     normalize = Normalize(mean=config.pixel_mean, std=config.pixel_std)
+    
+    if augment:
+        transform = Compose(
+            [Resize(min_size, max_size), RandomHorizontalFlip(flip), RandAugment(3, 5), ToTensor(), normalize]
+        )
+    else:
+        transform = Compose(
+            [Resize(min_size, max_size), RandomHorizontalFlip(flip), ToTensor(), normalize]
+        )
 
-    transform = Compose(
-        [Resize(min_size, max_size), RandomHorizontalFlip(flip), ToTensor(), normalize]
-    )
 
     return transform
