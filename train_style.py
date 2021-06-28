@@ -111,7 +111,30 @@ def freeze(model, section, on):
 
 focal_loss = SigmoidFocalLoss(2.0, 0.25)
 l1loss = nn.L1Loss(reduction='none')
+bceloss = nn.BCELoss(reduction='none')
 
+def flatten(cls_pred):
+    batch = cls_pred[0].shape[0]
+    n_class = cls_pred[0].shape[1]
+
+    cls_flat = []
+    for i in range(len(cls_pred)):
+        cls_flat.append(cls_pred[i].permute(0, 2, 3, 1).reshape(-1, n_class))
+
+    cls_flat = torch.cat(cls_flat, 0)
+    return cls_flat
+
+def compare(cls_pred1, cls_pred2):
+    batch = cls_pred1[0].shape[0]
+    cls_p1 = flatten(cls_pred1).sigmoid()
+    cls_p2 = flatten(cls_pred2).sigmoid()
+    if cls_p1.shape[0] != cls_p2.shape[0]:
+        return (0, 0)
+    
+    mx = torch.argmax(cls_p1, 1)
+    mask = cls_p1.max(1)[0].ge(0.25).float()
+    mx = F.one_hot(mx, 10)
+    return ((bceloss(cls_p2, mx) * mask).mean(), float(mask.mean()))
 
 def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, device):
     model.train()
@@ -153,26 +176,11 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         
         with torch.no_grad():
-            model.eval()
-            preds = model.module(target_images.tensors, image_sizes=target_images.sizes, r=r)
+            (_, p) = model(target_images.tensors, targets=target_targets, r=r)
             preds = [pred.to(device) for pred in preds]
-        model.train()
-        discrep = torch.zeros(1).to(device)
-        try:
-            (loss_dict, p) = model(target_aug_images.tensors, targets=preds, r=r)
-            loss_cls = loss_dict['loss_cls'].mean()
-            loss_box = loss_dict['loss_box'].mean()
-            loss_center = loss_dict['loss_center'].mean()
-            
-            discrep = loss_cls + loss_box + loss_center 
-            del loss_cls, loss_box, loss_center, loss_dict, p, preds
-            if discrep.isnan().sum() == 0:
-                loss += discrep
-            else:
-                discrep = torch.zeros(1).to(device)
-        except:
-            discrep = torch.zeros(1).to(device)
-            del preds
+        (_, q) = model(target_aug_images.tensors, targets=target_targets, r=r)
+        discrep, mask = compare(p, q)
+        del p, q
         
         
         loss.backward()
@@ -199,30 +207,14 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         del loss_cls, loss_box, loss_center, loss_dict, p
         del images, targets
         
-        model.eval()
-        preds, target_style = model.module(target_images.tensors, image_sizes=target_images.sizes, r=r, style=True)
-        preds = [pred.to(device) for pred in preds]
-        for p in preds:
-            p.box = p.box.detach()
-        del target_images
+        with torch.no_grad():
+            (_, p, target_style) = model(target_images.tensors, targets=target_targets, r=r, style=True)
+            preds = [pred.to(device) for pred in preds]
+        (_, q) = model(target_aug_images.tensors, targets=target_targets, r=r)
+        discrep, mask = compare(p, q)
+        del p, q
         
-        model.train()
-        discrep = torch.zeros(1).to(device)
-        try:
-            (loss_dict, p) = model(target_aug_images.tensors, targets=preds, r=r)
-            loss_cls = loss_dict['loss_cls'].mean()
-            loss_box = loss_dict['loss_box'].mean()
-            loss_center = loss_dict['loss_center'].mean()
-            
-            discrep = loss_cls + loss_box + loss_center 
-            del loss_cls, loss_box, loss_center, loss_dict, p, preds
-            if discrep.isnan().sum() == 0:
-                loss += discrep
-            else:
-                discrep = torch.zeros(1).to(device)
-        except:
-            discrep = torch.zeros(1).to(device)
-            del preds
+        
         #0.00001
         style_loss = args.mul * (source_style.mean(0) - target_style.mean(0)).pow(2).mean()
         loss +=  style_loss
