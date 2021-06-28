@@ -244,8 +244,10 @@ if __name__ == '__main__':
     unlabeled_set = AugmentedDataset(source_set, source_aug_set, np.arange(len(source_set)))
     
     backbone = vovnet27_slim(pretrained=False)
-    model = FCOS(args, backbone)
-    model = model.to(device)
+    a = torch.load('slim_fcos_26.pth')
+    model = a[0]
+    if isinstance(model, nn.DataParallel):
+        model = model.module
     model = nn.DataParallel(model)
     ema_model = ModelEMA(model, 0.999, device)
     
