@@ -156,7 +156,7 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
         loss_center = loss_dict['loss_center'].mean()
         
         loss += loss_cls + loss_box + loss_center 
-        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
+        del loss_cls, loss_box, loss_center, loss_dict, p
         del images, aug_images
         
         
@@ -175,7 +175,7 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         opt.step()
-        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
+        del loss_cls, loss_box, loss_center, loss_dict, p
         
         
         losses.append(cls + box + center)
