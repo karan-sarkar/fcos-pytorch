@@ -121,8 +121,8 @@ class FCOSHead(nn.Module):
             bbox_tower.append(nn.GroupNorm(32, in_channel))
             bbox_tower.append(nn.ReLU())
 
-        #self.cls_tower = nn.Sequential(*cls_tower)
-        #self.bbox_tower = nn.Sequential(*bbox_tower)
+        self.cls_tower = nn.Sequential(*cls_tower)
+        self.bbox_tower = nn.Sequential(*bbox_tower)
 
         self.cls_pred = nn.Conv2d(in_channel, n_class, 3, padding=1)
         self.bbox_pred = nn.Conv2d(in_channel, 4, 3, padding=1)
@@ -144,13 +144,16 @@ class FCOSHead(nn.Module):
         for feat, scale in zip(input, self.scales):
             cls_out = feat
             bbox_out = feat
+            s.append(feat)
+            i = 0
             for a, b in zip(self.cls_tower, self.bbox_tower):
                 cls_out = a(cls_out)
                 bbox_out = b(bbox_out)
-                if isinstance(a, nn.Conv2d):
+                if isinstance(a, nn.Conv2d) and i <= 0:
                     s.append(cls_out)
-                if isinstance(b, nn.Conv2d):
+                if isinstance(b, nn.Conv2d) and i <= 0:
                     s.append(bbox_out)
+                i += 1
                     
             logits.append(self.cls_pred(cls_out))
             centers.append(self.center_pred(cls_out))
