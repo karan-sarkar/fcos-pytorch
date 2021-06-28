@@ -113,7 +113,7 @@ focal_loss = SigmoidFocalLoss(2.0, 0.25)
 l1loss = nn.L1Loss(reduction='none')
 
 
-def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, device):
+def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, device, args):
     model.train()
 
     pbar = tqdm(loader, dynamic_ncols=True)
@@ -127,7 +127,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         target_images = target_images.to(device)
         target_aug_images = target_aug_images.to(device)
         target_targets = [target.to(device) for target in target_targets]
-        if len(targets) != len(target_targets):
+        if len(targets) != args.batch or len(target_targets) != args.batch_val:
             break
         
         c_opt.zero_grad()
@@ -376,7 +376,7 @@ if __name__ == '__main__':
         g['lr'] = args.lr2
     
     for epoch in range(args.epoch):
-        train(args, epoch, source_loader, target_loader, model, ema_model, c_opt, g_opt, device)
+        train(args, epoch, source_loader, target_loader, model, ema_model, c_opt, g_opt, device, args)
         torch.save((model, c_opt, g_opt, ema_model), 'style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, target_valid_loader, target_valid_set, ema_model.ema, device)
         valid(args, epoch, source_valid_loader, source_valid_set, ema_model.ema, device)
