@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader, sampler
 import torch.nn.functional as F
 from tqdm import tqdm
 import numpy as np
+from AugmentedDataset import AugmentedDataset
 
 from loss import SigmoidFocalLoss
 from argument import get_args
