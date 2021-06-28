@@ -244,7 +244,7 @@ if __name__ == '__main__':
     unlabeled_set = AugmentedDataset(source_set, source_aug_set, np.arange(len(source_set)))
     
     backbone = vovnet27_slim(pretrained=False)
-    a = torch.load('slim_fcos_26.pth')
+    a = torch.load('slim_fcos_66.pth')
     model = a[0]
     if isinstance(model, nn.DataParallel):
         model = model.module
