@@ -114,11 +114,7 @@ l1loss = nn.L1Loss(reduction='none')
 def train(args, epoch, loader, unlabeled_loader, model, opt, device):
     model.train()
 
-    if get_rank() == 0:
-        pbar = tqdm(range(1000)), dynamic_ncols=True)
-
-    else:
-        pbar = loader
+    pbar = tqdm(range(1000), dynamic_ncols=True)
     
     i = 0
     losses = []
