@@ -173,9 +173,9 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
             if discrep.isnan().sum() == 0:
                 loss += discrep
             else:
-                discrep = 0
+                discrep = torch.zeros(1).to(device)
         except:
-            discrep = 0
+            discrep = torch.zeros(1).to(device)
         
         
        
