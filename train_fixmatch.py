@@ -140,9 +140,9 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
         loss = loss_cls + loss_box + loss_center 
         
         loss_reduced = reduce_loss_dict(loss_dict)
-        cls = loss_reduced['loss_cls'].mean().item()
-        box = loss_reduced['loss_box'].mean().item()
-        center = loss_reduced['loss_center'].mean().item()
+        cls = float(loss_reduced['loss_cls'].mean().item())
+        box = float(loss_reduced['loss_box'].mean().item())
+        center = float(loss_reduced['loss_center'].mean().item())
         
         del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
         
@@ -189,7 +189,8 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
             (model, o) = torch.load('fix_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         
         losses.append(cls + box + center)
-        dlosses.append(discrep)
+        dlosses.append(float(discrep))
+        discrep = float(discrep)
         avg = sum(losses) / len(losses)
         davg = sum(dlosses) / len(dlosses)
         
