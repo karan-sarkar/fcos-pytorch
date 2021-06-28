@@ -149,13 +149,13 @@ def augment_list():
         (Equalize, 0, 1),
         (Identity, 0, 1),
         (Posterize, 4, 8),
-        (Rotate, -30, 30),
+        #(Rotate, -30, 30),
         (Sharpness, 0.05, 0.95),
-        (ShearX, -0.3, 0.3),
-        (ShearY, -0.3, 0.3),
-        (Solarize, 0, 256),
-        (TranslateX, -0.3, 0.3),
-        (TranslateY, -0.3, 0.3)
+        #(ShearX, -0.3, 0.3),
+        #(ShearY, -0.3, 0.3),
+        (Solarize, 0, 256)
+        #(TranslateX, -0.3, 0.3),
+        #(TranslateY, -0.3, 0.3)
     ]
     return l
 
@@ -167,11 +167,11 @@ class RandAugment:
         self.augment_list = augment_list()
 
         
-    def __call__(self, img):
+    def __call__(self, img, target):
         ops = random.choices(self.augment_list, k=self.n)
         for op, min_val, max_val in ops:
             val = min_val + float(max_val - min_val)*random.random()
             img = op(img, val) 
         cutout_val = random.random() * 0.5 
         img = Cutout(img, cutout_val) #for fixmatch
-        return img
+        return img, target
