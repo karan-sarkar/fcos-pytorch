@@ -165,17 +165,17 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
             loss_center = loss_dict['loss_center'].mean()
             
             discrep = loss_cls + loss_box + loss_center 
-            del loss_cls, loss_box, loss_center, loss_dict, p
+            del loss_cls, loss_box, loss_center, loss_dict, p, preds
             if discrep.isnan().sum() == 0:
                 loss += discrep
             else:
                 discrep = torch.zeros(1).to(device)
         except:
             discrep = torch.zeros(1).to(device)
+            del preds
+        del discrep
         
-        del loss_cls, loss_box, loss_center, loss_dict, p, preds
         
-        g_opt.zero_grad()
         loss.backward()
         
         if sum([p.grad.isnan().any() for p in model.parameters()]) == 0:
@@ -189,7 +189,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
             
             
             
-            
+        g_opt.zero_grad()
         (loss_dict, p, source_style) = model(images.tensors, targets=targets, r=r, style=True)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
@@ -213,15 +213,15 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
             loss_center = loss_dict['loss_center'].mean()
             
             discrep = loss_cls + loss_box + loss_center 
-            del loss_cls, loss_box, loss_center, loss_dict, p
+            del loss_cls, loss_box, loss_center, loss_dict, p, preds
             if discrep.isnan().sum() == 0:
                 loss += discrep
             else:
                 discrep = torch.zeros(1).to(device)
         except:
             discrep = torch.zeros(1).to(device)
+            del preds
         
-        del loss_cls, loss_box, loss_center, loss_dict, p, preds
         style_loss = (source_style - target_style).pow(2).mean()
         loss += 0.001 * style_loss
        
