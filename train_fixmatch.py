@@ -115,7 +115,7 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
     model.train()
 
     if get_rank() == 0:
-        pbar = tqdm(zip(loader, unlabeled_loader), dynamic_ncols=True)
+        pbar = tqdm(zip(range(1000), loader, unlabeled_loader), dynamic_ncols=True)
 
     else:
         pbar = loader
@@ -123,7 +123,7 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
     i = 0
     losses = []
     dlosses = []
-    for ((images, aug_images, targets), (unlabeled_images, unlabeled_aug_images, _)) in pbar:
+    for (_, (images, aug_images, targets), (unlabeled_images, unlabeled_aug_images, _)) in pbar:
         images = images.to(device)
         aug_images = aug_images.to(device)
         unlabeled_images = unlabeled_images.to(device)
@@ -184,8 +184,10 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
         
        
         loss.backward()
-        nn.utils.clip_grad_norm_(model.parameters(), 10)
-        opt.step()
+        
+        if sum([p.grad.isinf().any() for p in model.parameters()]) == 0
+            nn.utils.clip_grad_norm_(model.parameters(), 10)
+            opt.step()
         
         
         
