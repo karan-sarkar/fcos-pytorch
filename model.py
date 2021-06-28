@@ -144,7 +144,7 @@ class FCOSHead(nn.Module):
         for feat, scale in zip(input, self.scales):
             cls_out = feat
             bbox_out = feat
-            for a, b in zip(cls_tower, bbox_tower):
+            for a, b in zip(self.cls_tower, self.bbox_tower):
                 cls_out = a(cls_out)
                 bbox_out = b(bbox_out)
                 if isinstance(a, nn.Conv2d):
