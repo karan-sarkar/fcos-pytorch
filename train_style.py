@@ -345,7 +345,7 @@ if __name__ == '__main__':
         target_set,
         batch_size=args.batch_val,
         sampler = data_sampler(target_set, True, args.distributed),
-        collate_fn=collate_fn(args),
+        collate_fn=collate_fx(args),
     )
     source_valid_loader = DataLoader(
         source_valid_set,
