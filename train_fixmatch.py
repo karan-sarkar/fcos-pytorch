@@ -236,7 +236,7 @@ if __name__ == '__main__':
     source_aug_set = COCODataset(args.path, 'train', preset_transform(args, train=True, augment = True))
     source_valid_set = COCODataset(args.path, 'val', preset_transform(args, train=False))
   
-    sample = np.random.choice(len(source_set), 1000, replace=False)
+    sample = np.random.choice(len(source_set), 5000, replace=False)
     source_train_set = AugmentedDataset(source_set, source_aug_set, sample)
     unlabeled_set = AugmentedDataset(source_set, source_aug_set, np.arange(len(source_set)))
     
