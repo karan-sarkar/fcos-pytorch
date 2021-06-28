@@ -134,6 +134,7 @@ def compare(cls_pred1, cls_pred2):
     mx = torch.argmax(cls_p1, 1)
     mask = cls_p1.max(1)[0].ge(0.25).float()
     mx = F.one_hot(mx, 10).float()
+    print(mx.shape, cls_p2.shape, mask.shape)
     return ((bceloss(cls_p2, mx) * mask).mean(), float(mask.mean()))
 
 def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, device):
