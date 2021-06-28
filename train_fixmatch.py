@@ -11,7 +11,7 @@ from AugmentedDataset import AugmentedDataset
 from loss import SigmoidFocalLoss
 from argument import get_args
 from backbone import vovnet57, vovnet27_slim
-from dataset import COCODataset, collate_fn, CustomSubset
+from dataset import COCODataset, collate_fx, CustomSubset
 from model import FCOS
 from transform import preset_transform
 from evaluate import evaluate
@@ -124,7 +124,6 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
     losses = []
     dlosses = []
     for ((images, aug_images, targets), (unlabeled_images, unlabeled_aug_images, _)) in pbar:
-    
         images = images.to(device)
         aug_images = aug_images.to(device)
         unlabeled_images = unlabeled_images.to(device)
@@ -254,13 +253,13 @@ if __name__ == '__main__':
         source_train_set,
         batch_size=args.batch,
         sampler = data_sampler(source_train_set, True, args.distributed),
-        collate_fn=collate_fn(args),
+        collate_fx=collate_fn(args),
     )
     unlabeled_loader = DataLoader(
         unlabeled_set,
         batch_size=args.batch,
         sampler = data_sampler(unlabeled_set, True, args.distributed),
-        collate_fn=collate_fn(args),
+        collate_fx=collate_fn(args),
     )
     source_valid_loader = DataLoader(
         source_valid_set,

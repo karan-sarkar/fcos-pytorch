@@ -129,3 +129,14 @@ def collate_fn(config):
         return imgs, targets, ids
 
     return collate_data
+    
+def collate_fx(config):
+    def collate_data(batch):
+        batch = list(zip(*batch))
+        imgs = image_list(batch[0], config.size_divisible)
+        aug_imgs = image_list(batch[1], config.size_divisible)
+        targets = batch[2]
+
+        return (imgs, aug_imgs, targets)
+
+    return collate_data
