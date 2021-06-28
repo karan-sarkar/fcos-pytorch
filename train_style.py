@@ -343,7 +343,7 @@ if __name__ == '__main__':
     )
     target_loader = DataLoader(
         target_set,
-        batch_size=args.batch,
+        batch_size=args.batch_val,
         sampler = data_sampler(target_set, True, args.distributed),
         collate_fn=collate_fn(args),
     )
