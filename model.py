@@ -121,8 +121,8 @@ class FCOSHead(nn.Module):
             bbox_tower.append(nn.GroupNorm(32, in_channel))
             bbox_tower.append(nn.ReLU())
 
-        self.cls_tower = nn.Sequential(*cls_tower)
-        self.bbox_tower = nn.Sequential(*bbox_tower)
+        #self.cls_tower = nn.Sequential(*cls_tower)
+        #self.bbox_tower = nn.Sequential(*bbox_tower)
 
         self.cls_pred = nn.Conv2d(in_channel, n_class, 3, padding=1)
         self.bbox_pred = nn.Conv2d(in_channel, 4, 3, padding=1)
@@ -135,23 +135,33 @@ class FCOSHead(nn.Module):
 
         self.scales = nn.ModuleList([Scale(1.0) for _ in range(5)])
 
-    def forward(self, input):
+    def forward(self, input, style=False):
         logits = []
         bboxes = []
         centers = []
+        s = []
 
         for feat, scale in zip(input, self.scales):
-            cls_out = self.cls_tower(feat)
-
+            cls_out = feat
+            bbox_out = feat
+            for a, b in zip(cls_tower, bbox_tower):
+                cls_out = a(cls_out)
+                bbox_out = b(bbox_out)
+                if isinstance(a, nn.Conv2d):
+                    s.append(cls_out)
+                if isinstance(b, nn.Conv2d):
+                    s.append(bbox_out)
+                    
             logits.append(self.cls_pred(cls_out))
             centers.append(self.center_pred(cls_out))
 
-            bbox_out = self.bbox_tower(feat)
             bbox_out = torch.exp(scale(self.bbox_pred(bbox_out)))
 
             bboxes.append(bbox_out)
-
-        return logits, bboxes, centers
+        if style:
+            s = torch.stack([torch.einsum('bcmn,bdmn->cd', l, l) for l in s], 0)
+            return logits, bboxes, centers, s
+        return logits, bboxes, centers, None
 
 
 class FCOS(nn.Module):
@@ -194,13 +204,13 @@ class FCOS(nn.Module):
 
         self.apply(freeze_bn)
 
-    def forward(self, input, image_sizes=None, targets=None, r = None):
+    def forward(self, input, image_sizes=None, targets=None, r = None, style=False):
         if r is not None and targets is not None:
             targets = [targets[int(i)].to(input.device) for i in r.tolist()]
         self.to(input.device)
         features = self.backbone(input)
         features1 = self.fpn1(features)
-        cls_pred1, box_pred1, center_pred1 = self.head1(features1)
+        cls_pred1, box_pred1, center_pred1, s = self.head1(features1, style)
         location1 = self.compute_location(features1)
         
         if self.training:
@@ -212,6 +222,8 @@ class FCOS(nn.Module):
                 'loss_box': loss_box,
                 'loss_center': loss_center,
             }
+            if style:
+                return (losses1, cls_pred1, s)
             return (losses1, cls_pred1)
 
         else:
@@ -219,7 +231,8 @@ class FCOS(nn.Module):
                 location1, cls_pred1, box_pred1, center_pred1, image_sizes
             )
             
-
+            if style:
+                return (boxes1, s)
             return boxes1
     
 
