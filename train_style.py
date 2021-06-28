@@ -129,7 +129,7 @@ def compare(cls_pred1, cls_pred2):
     cls_p1 = flatten(cls_pred1).sigmoid()
     cls_p2 = flatten(cls_pred2).sigmoid()
     if cls_p1.shape[0] != cls_p2.shape[0]:
-        return (0, 0)
+        return (torch.zeros(1), 0)
     
     mx = torch.argmax(cls_p1, 1)
     mask = cls_p1.max(1)[0].ge(0.25).float().view(-1, 1)
