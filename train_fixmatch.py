@@ -165,7 +165,7 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
             preds = model.module(unlabeled_images.tensors, image_sizes=unlabeled_images.sizes, r=r)
             preds = [pred.to(device) for pred in preds]
         model.train()
-        
+        discrep = 0
         try:
             (loss_dict, p) = model(unlabeled_aug_images.tensors, targets=preds, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
@@ -173,15 +173,17 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
             loss_center = loss_dict['loss_center'].mean()
             
             discrep = loss_cls + loss_box + loss_center 
+            del loss_cls, loss_box, loss_center, loss_dict, p
+            discrep[discrep.isnan()] = 0
         except:
             discrep = 0
-        discrep[discrep.isnan()] = 0
+        
         loss += discrep
        
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         opt.step()
-        del loss_cls, loss_box, loss_center, loss_dict, p
+        
         
         
         losses.append(cls + box + center)
