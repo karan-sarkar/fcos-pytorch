@@ -185,7 +185,7 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
        
         loss.backward()
         
-        if sum([p.grad.isinf().any() for p in model.parameters()]) == 0
+        if sum([p.grad.isinf().any() for p in model.parameters()]) == 0:
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             opt.step()
         
