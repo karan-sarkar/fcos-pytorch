@@ -121,7 +121,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
     i = 0
     losses = []
     dlosses = []
-    for ((images, targets, _), (target_images, target_aug_images, _)) in zip(pbar, target_loader):
+    for ((images, targets, _), (target_images, target_aug_images, target_targets)) in zip(pbar, target_loader):
         images = images.to(device)
         targets = [target.to(device) for target in targets]
         target_images = target_images.to(device)
