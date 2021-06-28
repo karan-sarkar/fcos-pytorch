@@ -114,12 +114,12 @@ l1loss = nn.L1Loss(reduction='none')
 def train(args, epoch, loader, unlabeled_loader, model, opt, device):
     model.train()
 
-    pbar = tqdm(range(1000), dynamic_ncols=True)
+    pbar = tqdm(loader, dynamic_ncols=True)
     
     i = 0
     losses = []
     dlosses = []
-    for (_, (images, aug_images, targets), (unlabeled_images, unlabeled_aug_images, _)) in zip(pbar, loader, unlabeled_loader):
+    for ((images, aug_images, targets), (unlabeled_images, unlabeled_aug_images, _)) in zip(pbar, unlabeled_loader):
         images = images.to(device)
         aug_images = aug_images.to(device)
         unlabeled_images = unlabeled_images.to(device)
@@ -297,7 +297,8 @@ if __name__ == '__main__':
         )
         train(args, epoch, source_loader, unlabeled_loader, model, opt, device)
         torch.save((model, opt), 'fix_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
-        valid(args, epoch, source_valid_loader, source_valid_set, model, device)
+        if epoch > 0 and epoch % 30 == 0:
+            valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         
         
        
