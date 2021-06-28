@@ -253,13 +253,13 @@ if __name__ == '__main__':
         source_train_set,
         batch_size=args.batch,
         sampler = data_sampler(source_train_set, True, args.distributed),
-        collate_fx=collate_fn(args),
+        collate_fn=collate_fx(args),
     )
     unlabeled_loader = DataLoader(
         unlabeled_set,
         batch_size=args.batch,
         sampler = data_sampler(unlabeled_set, True, args.distributed),
-        collate_fx=collate_fn(args),
+        collate_fn=collate_fx(args),
     )
     source_valid_loader = DataLoader(
         source_valid_set,
