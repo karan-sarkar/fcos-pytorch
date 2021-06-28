@@ -232,7 +232,7 @@ if __name__ == '__main__':
     backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
     model = model.to(device)
-    model = nn.DataParallel(model)
+    #model = nn.DataParallel(model)
     
     opt = optim.SGD(
         model.parameters(),
