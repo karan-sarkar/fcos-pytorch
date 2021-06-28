@@ -159,7 +159,7 @@ class FCOSHead(nn.Module):
 
             bboxes.append(bbox_out)
         if style:
-            s = torch.cat([torch.einsum('bcmn,bdmn->cd', l, l).view(-1) for l in s], 0)
+            s = torch.cat([torch.einsum('bcmn,bdmn->bcd', l, l).view(l.size(0), -1) for l in s], 1)
             return logits, bboxes, centers, s
         return logits, bboxes, centers, None
 

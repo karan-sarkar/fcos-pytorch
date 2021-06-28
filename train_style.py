@@ -221,7 +221,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         except:
             discrep = torch.zeros(1).to(device)
             del preds
-        
+        print(source_style.shape, target_style.shape)
         style_loss = (source_style - target_style).pow(2).mean()
         loss += 0.001 * style_loss
        
