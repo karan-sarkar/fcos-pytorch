@@ -173,7 +173,6 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         except:
             discrep = torch.zeros(1).to(device)
             del preds
-        del discrep
         
         
         loss.backward()
@@ -187,7 +186,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         if loss.isnan().sum() + discrep.isnan().sum() > 0:
             (model, c_opt, g_opt, ema_model) = torch.load('style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
             
-            
+        del discrep
             
         g_opt.zero_grad()
         (loss_dict, p, source_style) = model(images.tensors, targets=targets, r=r, style=True)
@@ -198,11 +197,12 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         loss = loss_cls + loss_box + loss_center 
         
         del loss_cls, loss_box, loss_center, loss_dict, p
+        del images, targets
         
         model.eval()
         preds, target_style = model.module(target_images.tensors, image_sizes=target_images.sizes, r=r, style=True)
         preds = [pred.to(device) for pred in preds]
-        
+        del target_images
         
         model.train()
         discrep = torch.zeros(1).to(device)
