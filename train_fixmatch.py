@@ -175,6 +175,7 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
             discrep = loss_cls + loss_box + loss_center 
         except:
             discrep = 0
+        discrep[discrep.isnan()] = 0
         loss += discrep
        
         loss.backward()
