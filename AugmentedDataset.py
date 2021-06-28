@@ -25,6 +25,8 @@ class AugmentedDataset(torch.utils.data.Dataset):
         
     def __getitem__(self, idx):
         i = self.sample[idx]
+        print([type(a) for a in self.data[i]])
+        print([type(a) for a in self.aug_data[i]])
         return (self.data[i][0], self.aug_data[i][0], self.data[i][1])
 
     
