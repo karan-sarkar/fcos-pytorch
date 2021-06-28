@@ -115,7 +115,7 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
     model.train()
 
     if get_rank() == 0:
-        pbar = tqdm(zip(range(1000), loader, unlabeled_loader), dynamic_ncols=True)
+        pbar = tqdm(range(1000)), dynamic_ncols=True)
 
     else:
         pbar = loader
@@ -123,7 +123,7 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
     i = 0
     losses = []
     dlosses = []
-    for (_, (images, aug_images, targets), (unlabeled_images, unlabeled_aug_images, _)) in pbar:
+    for (_, (images, aug_images, targets), (unlabeled_images, unlabeled_aug_images, _)) in zip(pbar, loader, unlabeled_loader):
         images = images.to(device)
         aug_images = aug_images.to(device)
         unlabeled_images = unlabeled_images.to(device)
@@ -165,7 +165,7 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
             preds = model.module(unlabeled_images.tensors, image_sizes=unlabeled_images.sizes, r=r)
             preds = [pred.to(device) for pred in preds]
         model.train()
-        discrep = 0
+        discrep = torch.zeros(1).to(device)
         try:
             (loss_dict, p) = model(unlabeled_aug_images.tensors, targets=preds, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
@@ -185,18 +185,19 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
        
         loss.backward()
         
-        if sum([p.grad.isinf().any() for p in model.parameters()]) == 0:
+        if sum([p.grad.isnan().any() for p in model.parameters()]) == 0:
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             opt.step()
         
-        
+        if loss.isnan().sum() + discrep.isnan().sum() > 0:
+            (model, o) = torch.load('fix_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         
         losses.append(cls + box + center)
         dlosses.append(discrep)
         avg = sum(losses) / len(losses)
         davg = sum(dlosses) / len(dlosses)
         
-        if i % 100 == 0:
+        if i % 5 == 0:
             torch.save((model, opt), 'fix_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         
         if get_rank() == 0:
