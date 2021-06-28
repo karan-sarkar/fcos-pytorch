@@ -174,11 +174,14 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
             
             discrep = loss_cls + loss_box + loss_center 
             del loss_cls, loss_box, loss_center, loss_dict, p
-            discrep[discrep.isnan()] = 0
+            if discrep.isnan().sum() == 0:
+                loss += discrep
+            else:
+                discrep = 0
         except:
             discrep = 0
         
-        loss += discrep
+        
        
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
