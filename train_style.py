@@ -201,7 +201,9 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         model.eval()
         preds, target_style = model.module(target_images.tensors, image_sizes=target_images.sizes, r=r, style=True)
-        preds = [pred.to(device).detach() for pred in preds]
+        preds = [pred.to(device) for pred in preds]
+        for p in preds:
+            p.box = p.box.detach()
         del target_images
         
         model.train()
