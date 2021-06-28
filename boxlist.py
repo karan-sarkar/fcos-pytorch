@@ -76,7 +76,7 @@ class BoxList:
         return self.box.shape[0]
 
     def __getitem__(self, index):
-        box = BoxList(self.box[index], image_size=self.size, self.mode)
+        box = BoxList(self.box[index], image_size=self.size, mode=self.mode)
 
         for k, v in self.fields.items():
             box.fields[k] = v[index]
@@ -168,7 +168,7 @@ class BoxList:
             return self
 
     def to(self, device):
-        box = BoxList(self.box.to(device), image_size=self.size, self.mode)
+        box = BoxList(self.box.to(device), image_size=self.size, mode=self.mode)
 
         for k, v in self.fields.items():
             if hasattr(v, 'to'):
