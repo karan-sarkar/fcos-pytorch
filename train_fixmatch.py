@@ -164,12 +164,16 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
             model.eval()
             preds = model(unlabeled_images.tensors, image_sizes=unlabeled_images.sizes, r=r)
         model.train()
-        (loss_dict, p) = model(unlabeled_aug_images.tensors, targets=preds, r=r)
-        loss_cls = loss_dict['loss_cls'].mean()
-        loss_box = loss_dict['loss_box'].mean()
-        loss_center = loss_dict['loss_center'].mean()
         
-        discrep = loss_cls + loss_box + loss_center 
+        if len(preds) > 0:
+            (loss_dict, p) = model(unlabeled_aug_images.tensors, targets=preds, r=r)
+            loss_cls = loss_dict['loss_cls'].mean()
+            loss_box = loss_dict['loss_box'].mean()
+            loss_center = loss_dict['loss_center'].mean()
+            
+            discrep = loss_cls + loss_box + loss_center 
+        else:
+            discrep = 0
         loss += discrep
        
         loss.backward()
@@ -232,7 +236,7 @@ if __name__ == '__main__':
     backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
     model = model.to(device)
-    #model = nn.DataParallel(model)
+    model = nn.DataParallel(model)
     
     opt = optim.SGD(
         model.parameters(),

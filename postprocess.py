@@ -70,7 +70,7 @@ class FCOSPostprocessor(nn.Module):
 
             height, width = image_sizes[i]
 
-            boxlist = BoxList(detections, (int(width), int(height)), mode='xyxy')
+            boxlist = BoxList(detections, image_size= (int(width), int(height)), mode='xyxy')
             boxlist.fields['labels'] = class_id
             boxlist.fields['scores'] = torch.sqrt(cls_p)
             boxlist = boxlist.clip(remove_empty=False)
@@ -112,7 +112,7 @@ class FCOSPostprocessor(nn.Module):
                 id = (labels == j).nonzero().view(-1)
                 score_j = scores[id]
                 box_j = box[id, :].view(-1, 4)
-                box_by_class = BoxList(box_j, boxlist.size, mode='xyxy')
+                box_by_class = BoxList(box_j, image_size = boxlist.size, mode='xyxy')
                 box_by_class.fields['scores'] = score_j
                 box_by_class = boxlist_nms(box_by_class, score_j, self.nms_threshold)
                 n_label = len(box_by_class)

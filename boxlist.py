@@ -25,14 +25,14 @@ class BoxList:
 
         if mode == 'xyxy':
             box = torch.cat([x_min, y_min, x_max, y_max], -1)
-            box = BoxList(box, self.size, mode=mode)
+            box = BoxList(box, image_size=self.size, mode=mode)
 
         elif mode == 'xywh':
             remove = 1
             box = torch.cat(
                 [x_min, y_min, x_max - x_min + remove, y_max - y_min + remove], -1
             )
-            box = BoxList(box, self.size, mode=mode)
+            box = BoxList(box, image_size=self.size, mode=mode)
 
         box.copy_field(self)
 
@@ -76,7 +76,7 @@ class BoxList:
         return self.box.shape[0]
 
     def __getitem__(self, index):
-        box = BoxList(self.box[index], self.size, self.mode)
+        box = BoxList(self.box[index], image_size=self.size, self.mode)
 
         for k, v in self.fields.items():
             box.fields[k] = v[index]
@@ -89,7 +89,7 @@ class BoxList:
         if ratios[0] == ratios[1]:
             ratio = ratios[0]
             scaled = self.box * ratio
-            box = BoxList(scaled, size, mode=self.mode)
+            box = BoxList(scaled, image_size=size, mode=self.mode)
 
             for k, v in self.fields.items():
                 if not isinstance(v, torch.Tensor):
@@ -106,7 +106,7 @@ class BoxList:
         scaled_y_min = y_min * ratio_h
         scaled_y_max = y_max * ratio_h
         scaled = torch.cat([scaled_x_min, scaled_y_min, scaled_x_max, scaled_y_max], -1)
-        box = BoxList(scaled, size, mode='xyxy')
+        box = BoxList(scaled, image_size=size, mode='xyxy')
 
         for k, v in self.fields.items():
             if not isinstance(v, torch.Tensor):
@@ -168,7 +168,7 @@ class BoxList:
             return self
 
     def to(self, device):
-        box = BoxList(self.box.to(device), self.size, self.mode)
+        box = BoxList(self.box.to(device), image_size=self.size, self.mode)
 
         for k, v in self.fields.items():
             if hasattr(v, 'to'):
