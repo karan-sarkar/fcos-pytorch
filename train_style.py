@@ -177,7 +177,6 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         with torch.no_grad():
             (_, p) = model(target_images.tensors, targets=target_targets, r=r)
-            preds = [pred.to(device) for pred in preds]
         (_, q) = model(target_aug_images.tensors, targets=target_targets, r=r)
         discrep, mask = compare(p, q)
         del p, q
@@ -209,7 +208,6 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         with torch.no_grad():
             (_, p, target_style) = model(target_images.tensors, targets=target_targets, r=r, style=True)
-            preds = [pred.to(device) for pred in preds]
         (_, q) = model(target_aug_images.tensors, targets=target_targets, r=r)
         discrep, mask = compare(p, q)
         del p, q
