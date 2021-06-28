@@ -23,6 +23,8 @@ from distributed import (
     all_gather,
 )
 
+from ema import ModelEMA
+
 
 
 def accumulate_predictions(predictions):
@@ -111,7 +113,7 @@ focal_loss = SigmoidFocalLoss(2.0, 0.25)
 l1loss = nn.L1Loss(reduction='none')
 
 
-def train(args, epoch, loader, unlabeled_loader, model, opt, device):
+def train(args, epoch, loader, unlabeled_loader, model, ema_model, opt, device, sample):
     model.train()
 
     pbar = tqdm(loader, dynamic_ncols=True)
@@ -184,9 +186,10 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
         if sum([p.grad.isnan().any() for p in model.parameters()]) == 0:
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             opt.step()
+            ema_model.update(model)
         
         if loss.isnan().sum() + discrep.isnan().sum() > 0:
-            (model, o) = torch.load('fix_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+            (model, o, ema_model, sample) = torch.load('fix_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         
         losses.append(cls + box + center)
         dlosses.append(float(discrep))
@@ -195,7 +198,7 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
         davg = sum(dlosses) / len(dlosses)
         
         if i % 5 == 0:
-            torch.save((model, opt), 'fix_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+            torch.save((model, opt, ema_model, sample), 'fix_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         
         if get_rank() == 0:
             pbar.set_description(
@@ -244,6 +247,7 @@ if __name__ == '__main__':
     model = FCOS(args, backbone)
     model = model.to(device)
     model = nn.DataParallel(model)
+    ema_model = ModelEMA(model, args.ema_decay)
     
     opt = optim.SGD(
         model.parameters(),
@@ -276,7 +280,7 @@ if __name__ == '__main__':
     )
     
     if args.ckpt is not None:
-        (model, o) = torch.load('fix_fcos_' + str(args.ckpt) + '.pth')
+        (model, o, ema_model, sample) = torch.load('fix_fcos_' + str(args.ckpt) + '.pth')
         if args.rand_class != 'true':
             opt = o
         if isinstance(model, nn.DataParallel):
@@ -295,8 +299,8 @@ if __name__ == '__main__':
             sampler = data_sampler(source_train_set, False, args.distributed),
             collate_fn=collate_fx(args),
         )
-        train(args, epoch, source_loader, unlabeled_loader, model, opt, device)
-        torch.save((model, opt), 'fix_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        train(args, epoch, source_loader, unlabeled_loader, model, ema_model, opt, device, sample)
+        torch.save((model, opt, ema_model, sample), 'fix_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         if epoch > 0 and epoch % 30 == 0:
             valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         
