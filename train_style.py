@@ -201,7 +201,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         model.eval()
         preds, target_style = model.module(target_images.tensors, image_sizes=target_images.sizes, r=r, style=True)
-        preds = [pred.to(device) for pred in preds]
+        preds = [pred.to(device).detach() for pred in preds]
         del target_images
         
         model.train()
@@ -373,8 +373,8 @@ if __name__ == '__main__':
         g['lr'] = args.lr2
     
     for epoch in range(args.epoch):
-        valid(args, epoch, target_valid_loader, target_valid_set, ema_model.ema, device)
-        valid(args, epoch, source_valid_loader, source_valid_set, ema_model.ema, device)
+        #valid(args, epoch, target_valid_loader, target_valid_set, ema_model.ema, device)
+        #valid(args, epoch, source_valid_loader, source_valid_set, ema_model.ema, device)
         train(args, epoch, source_loader, target_loader, model, ema_model, c_opt, g_opt, device)
         torch.save((model, c_opt, g_opt, ema_model), 'style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         
