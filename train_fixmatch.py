@@ -265,7 +265,7 @@ if __name__ == '__main__':
     )
     unlabeled_loader = DataLoader(
         unlabeled_set,
-        batch_size=args.batch,
+        batch_size=args.batch_val,
         sampler = data_sampler(unlabeled_set, True, args.distributed),
         collate_fn=collate_fx(args),
     )
