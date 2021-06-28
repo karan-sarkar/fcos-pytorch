@@ -247,7 +247,7 @@ if __name__ == '__main__':
     model = FCOS(args, backbone)
     model = model.to(device)
     model = nn.DataParallel(model)
-    ema_model = ModelEMA(model, args.ema_decay)
+    ema_model = ModelEMA(model, 0.999)
     
     opt = optim.SGD(
         model.parameters(),
