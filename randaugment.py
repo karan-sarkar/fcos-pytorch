@@ -174,4 +174,4 @@ class RandAugment:
             img = op(img, val) 
         cutout_val = random.random() * 0.5 
         img = Cutout(img, cutout_val) #for fixmatch
-        return img, target
+        return (img, target)
