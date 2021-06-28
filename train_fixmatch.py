@@ -162,7 +162,7 @@ def train(args, epoch, loader, unlabeled_loader, model, opt, device):
         
         with torch.no_grad():
             model.eval()
-            preds = model(unlabeled_images.tensors, image_sizes=unlabeled_images.sizes, r=r).detach()
+            preds = model(unlabeled_images.tensors, image_sizes=unlabeled_images.sizes, r=r)
         model.train()
         (loss_dict, p) = model(unlabeled_aug_images.tensors, targets=preds, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
