@@ -96,7 +96,7 @@ class SigmoidFocalLoss(nn.Module):
 
         # First, find the loss for all priors
         conf_loss_all = self.compute(predicted_scores.view(-1, n_classes), true_classes.view(-1))  # (N * 8732)
-        conf_loss_all = conf_loss_all.sum(-1)  # (N, 8732)
+        conf_loss_all = conf_loss_all.view(batch_size, n_priors, n_classes).sum(-1)  # (N, 8732)
         
         # We already know which priors are positive
         conf_loss_pos = conf_loss_all[positive_priors]  # (sum(n_positives))
