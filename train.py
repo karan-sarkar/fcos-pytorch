@@ -127,8 +127,9 @@ def harden(cls_pred, device):
     
     mx = torch.argmax(cls_p, 1)
     mx = F.one_hot(mx, 11)
+    mask = cls_p1[:, :1].max(1)[0].ge(0.1).float().mean()
    
-    return l1loss(cls_p, mx)
+    return (l1loss(cls_p, mx), mask)
     
 def compare(cls_pred1, cls_pred2):
     batch = cls_pred1[0].shape[0]
