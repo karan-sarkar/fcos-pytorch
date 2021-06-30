@@ -119,19 +119,17 @@ def freeze(model, section, on):
         i += 1
 
 focal_loss = SigmoidFocalLoss(2.0, 0.25)
-l1loss = nn.L1Loss(reduction='none')
+l1loss = nn.L1Loss()
 
 def harden(cls_pred, device):
     batch = cls_pred[0].shape[0]
-    cls_p = flatten(cls_pred).softmax(1)[:, 1:]
+    cls_p = flatten(cls_pred).softmax(1)
     
-    
-    mask = cls_p.max(1)[0].ge(0.01).float().view(-1, 1)
     mx = torch.argmax(cls_p, 1)
-    mx = F.one_hot(mx, 10)
+    mx = F.one_hot(mx, 11)
    
-    return ((torch.mean(torch.abs(cls_p -  (mx * mask)), 1) *  ( (1 - mask) * 98 + 1).view(-1)).mean(), mask.mean())
-
+    return l1loss(cls_p, mx)
+    
 def compare(cls_pred1, cls_pred2):
     batch = cls_pred1[0].shape[0]
     cls_p1 = flatten(cls_pred1).softmax(-1)
@@ -226,7 +224,6 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         for _ in range(4):
             g_opt.zero_grad()
             r = torch.range(0, len(targets) - 1).to(device)
-            '''
             (loss_dict, _) = model(images.tensors, targets=targets, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
             loss_box = loss_dict['loss_box'].mean()
@@ -240,11 +237,10 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             center = loss_reduced['loss_center'].mean().item()
             
             del loss_cls, loss_box, loss_center, loss_dict, loss_reduced
-            '''
             (_, p) = model(target_images.tensors, targets=target_targets, r=r)
             dloss, _ = harden(p, device)
             discrep = dloss.mean().item()
-            loss = dloss
+            loss += dloss
             
             del p, dloss
             
