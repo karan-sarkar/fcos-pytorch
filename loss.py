@@ -67,7 +67,6 @@ class SigmoidFocalLoss(nn.Module):
 
     def compute(self, out, target):
         n_class = out.shape[1]
-        print(n_class)
         class_ids = torch.arange(
             n_class, dtype=target.dtype, device=target.device
         ).unsqueeze(0)
@@ -111,7 +110,7 @@ class SigmoidFocalLoss(nn.Module):
         conf_loss_hard_neg = conf_loss_neg[hard_negatives]  # (sum(n_hard_negatives))
 
         # As in the paper, averaged over positive priors only, although computed over both positive and hard-negative priors
-        conf_loss = (conf_loss_hard_neg.sum() + conf_loss_pos.sum()) / n_positives.sum().float()  # (), scalar
+        conf_loss = (conf_loss_hard_neg.sum() + conf_loss_pos.sum()) # (), scalar
         return conf_loss
          
          
