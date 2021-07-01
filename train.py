@@ -305,8 +305,8 @@ if __name__ == '__main__':
     model = model.to(device)
     model = nn.DataParallel(model)
     
-    bottom = [p for n, p in model.named_parameters() if ('head' not in n)]
-    top = [p for n, p in model.named_parameters() if ('head' in n)]
+    bottom = [p for n, p in model.named_parameters() if ('pred' not in n)]
+    top = [p for n, p in model.named_parameters() if ('pred' in n)]
     print(len(bottom), len(top))
     
     g_opt = optim.SGD(
