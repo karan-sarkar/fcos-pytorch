@@ -123,7 +123,7 @@ l1loss = nn.L1Loss()
 
 def harden(cls_pred, device):
     batch = cls_pred[0].shape[0]
-    a = flatten(cls_pred).
+    a = flatten(cls_pred)
     cls_p = a.softmax(1)
     hard = (a * 1.5).softmax(1)
     
