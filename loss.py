@@ -65,55 +65,28 @@ class SigmoidFocalLoss(nn.Module):
         self.gamma = gamma
         self.alpha = alpha
 
-    def compute(self, out, target):
+    def forward(self, out, target):
         n_class = out.shape[1]
-        class_ids = torch.arange(
-            n_class, dtype=target.dtype, device=target.device
+        class_ids = torch.arange(n_class, dtype=target.dtype, device=target.device
         ).unsqueeze(0)
 
         t = target.unsqueeze(1)
-        p = torch.softmax(out, 1)
-        
+        p = torch.softmax(out, -1)
+
         gamma = self.gamma
         alpha = self.alpha
 
         term1 = (1 - p) ** gamma * torch.log(p)
         term2 = p ** gamma * torch.log(1 - p)
+
+        # print(term1.sum(), term2.sum())
+
         loss = (
             -(t == class_ids).float() * alpha * term1
             - ((t != class_ids) * (t >= 0)).float() * (1 - alpha) * term2
         )
 
-        return loss
-    
-    def forward(self, predicted_scores, true_classes):
-        batch_size, n_priors, n_classes = predicted_scores.shape
-        
-        positive_priors = true_classes != 0
-        n_positives = positive_priors.sum(dim=1)  # (N)
-        n_hard_negatives = 3 * n_positives  # (N)
-
-        # First, find the loss for all priors
-        conf_loss_all = self.compute(predicted_scores.view(-1, n_classes), true_classes.view(-1))  # (N * 8732)
-        conf_loss_all = conf_loss_all.view(batch_size, n_priors, n_classes).sum(-1)  # (N, 8732)
-        
-        # We already know which priors are positive
-        conf_loss_pos = conf_loss_all[positive_priors]  # (sum(n_positives))
-
-        # Next, find which priors are hard-negative
-        # To do this, sort ONLY negative priors in each image in order of decreasing loss and take top n_hard_negatives
-        conf_loss_neg = conf_loss_all.clone()  # (N, 8732)
-        conf_loss_neg[positive_priors] = 0.  # (N, 8732), positive priors are ignored (never in top n_hard_negatives)
-        conf_loss_neg, _ = conf_loss_neg.sort(dim=1, descending=True)  # (N, 8732), sorted by decreasing hardness
-        hardness_ranks = torch.LongTensor(range(n_priors)).unsqueeze(0).expand_as(conf_loss_neg).to(true_classes.device)  # (N, 8732)
-        hard_negatives = hardness_ranks < n_hard_negatives.unsqueeze(1)  # (N, 8732)
-        conf_loss_hard_neg = conf_loss_neg[hard_negatives]  # (sum(n_hard_negatives))
-
-        # As in the paper, averaged over positive priors only, although computed over both positive and hard-negative priors
-        conf_loss = (conf_loss_hard_neg.sum() + conf_loss_pos.sum()) # (), scalar
-        return conf_loss
-         
-         
+        return loss.sum()
 
 
 class FCOSLoss(nn.Module):
@@ -287,27 +260,24 @@ class FCOSLoss(nn.Module):
         center_flat = []
 
         labels_flat = []
-        labels_flat2 = []
         box_targets_flat = []
 
         for i in range(len(labels)):
-            cls_flat.append(cls_pred[i].permute(0, 2, 3, 1).reshape(cls_pred[i].shape[0], -1, n_class))
+            cls_flat.append(cls_pred[i].permute(0, 2, 3, 1).reshape(-1, n_class))
             box_flat.append(box_pred[i].permute(0, 2, 3, 1).reshape(-1, 4))
             center_flat.append(center_pred[i].permute(0, 2, 3, 1).reshape(-1))
 
-            labels_flat.append(labels[i].reshape(cls_pred[i].shape[0], -1))
-            labels_flat2.append(labels[i].reshape(-1))
+            labels_flat.append(labels[i].reshape(-1))
             box_targets_flat.append(box_targets[i].reshape(-1, 4))
 
-        cls_flat = torch.cat(cls_flat, 1)
+        cls_flat = torch.cat(cls_flat, 0)
         box_flat = torch.cat(box_flat, 0)
         center_flat = torch.cat(center_flat, 0)
 
-        labels_flat = torch.cat(labels_flat, 1)
-        labels_flat2 = torch.cat(labels_flat2, 0)
+        labels_flat = torch.cat(labels_flat, 0)
         box_targets_flat = torch.cat(box_targets_flat, 0)
 
-        pos_id = torch.nonzero(labels_flat2 > 0).squeeze(1)
+        pos_id = torch.nonzero(labels_flat > 0).squeeze(1)
 
         cls_loss = self.cls_loss(cls_flat, labels_flat.int()) / (pos_id.numel() + batch)
 
