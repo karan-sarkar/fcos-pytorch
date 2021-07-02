@@ -290,7 +290,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         del loss_dict2, loss_reduced
         
         # Train Bottom
-        for j in range(3):
+        for j in range(1):
             g_opt.zero_grad()
             (loss_dict, _), (loss_dict2, _) = model(images.tensors, targets=targets, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
@@ -379,8 +379,8 @@ if __name__ == '__main__':
     model = FCOS(args, backbone)
     model = nn.DataParallel(model)
     
-    bottom = [p for n, p in model.named_parameters() if ('head' not in n)]
-    top = [p for n, p in model.named_parameters() if ('head' in n)]
+    bottom = [p for n, p in model.named_parameters() if ('pred' not in n)]
+    top = [p for n, p in model.named_parameters() if ('pred' in n)]
 
     g_opt = optim.SGD(
         bottom,
