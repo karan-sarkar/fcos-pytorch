@@ -161,12 +161,12 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         r = torch.range(0, len(targets) - 1).to(device)
 
         (loss_dict, p) = model(images.tensors, targets=targets, r=r)
-        (_, source_mask) = harden(p, device)
+        (discrep, source_mask) = harden(p, device)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
         
-        loss = loss_cls + loss_box + loss_center 
+        loss = loss_cls + loss_box + loss_center + discrep
         
         loss_reduced = reduce_loss_dict(loss_dict)
         cls = loss_reduced['loss_cls'].mean().item()
