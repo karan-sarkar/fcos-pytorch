@@ -194,11 +194,9 @@ def compare(p, q):
     box1 = flatten(box_pred1, 4)
     box2 = flatten(box_pred2, 4)
     
-    mask1 = cls_p1[:, 1:].max(1)[0].view(-1, 1)
-    mask2 = cls_p2[:, 1:].max(1)[0].view(-1, 1)
     
     
-    return (10 * l1loss(cls_p1, cls_p2), l1loss(box1, box2), 0)
+    return (l1loss(cls_p1, cls_p2), l1loss(box1, box2), 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -278,7 +276,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         (loss_dict2, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
         
         cls_discrep, box_discrep, center_discrep = compare(p, q)
-        dloss = cls_discrep + box_discrep
+        dloss = cls_discrep
         
         loss_reduced = reduce_loss_dict(loss_dict2)
         loss_cls_target = loss_reduced['loss_cls'].mean().item()
@@ -292,7 +290,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         del loss_dict2, loss_reduced
         
         # Train Bottom
-        for j in range(4):
+        for j in range(3):
             g_opt.zero_grad()
             (loss_dict, _), (loss_dict2, _) = model(images.tensors, targets=targets, r=r)
             loss_cls = loss_dict['loss_cls'].mean()
@@ -301,7 +299,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
             cls_discrep, box_discrep, center_discrep = compare(p, q)
-            dloss = cls_discrep + box_discrep
+            dloss = cls_discrep
             loss = loss_cls + loss_box + loss_center
             
             loss_cls2 = loss_dict2['loss_cls'].mean()
