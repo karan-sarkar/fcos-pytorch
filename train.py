@@ -83,7 +83,7 @@ def valid(args, epoch, loader, dataset, m, device):
         losses.append(float(loss))
 
         pred = [p.to('cpu') for p in pred]
-        pbar.set_description(float(sum(losses) / len(losses)))
+        pbar.set_description(str(sum(losses) / len(losses)))
         preds.update({id: p for id, p in zip(ids, pred)})
     
     print('LOSS', sum(losses) / len(losses))
