@@ -116,7 +116,7 @@ def preset_transform(config, train=True):
 
     normalize = Normalize(mean=config.pixel_mean, std=config.pixel_std)
     transform = Compose(
-        [Resize(min_size, max_size), RandomHorizontalFlip(flip), ToTensor(), normalize]
+        [RandomHorizontalFlip(flip), ToTensor(), normalize]
     )
 
     return transform
