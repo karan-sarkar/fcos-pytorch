@@ -189,8 +189,8 @@ def compare(p, q):
     cls_pred2, box_pred2, center_pred2, location2 = q
     
     
-    cls_p1 = flatten(cls_pred1[-2:], 11).softmax(-1)
-    cls_p2 = flatten(cls_pred2[-2:], 11).softmax(-1)
+    cls_p1 = flatten(cls_pred1, 11).softmax(-1)
+    cls_p2 = flatten(cls_pred2, 11).softmax(-1)
     box1 = flatten(box_pred1, 4)
     box2 = flatten(box_pred2, 4)
     
@@ -379,8 +379,8 @@ if __name__ == '__main__':
     model = FCOS(args, backbone)
     model = nn.DataParallel(model)
     
-    bottom = [p for n, p in model.named_parameters() if ('pred' not in n)]
-    top = [p for n, p in model.named_parameters() if ('pred' in n)]
+    bottom = [p for n, p in model.named_parameters() if ('head' not in n)]
+    top = [p for n, p in model.named_parameters() if ('head' in n)]
 
     g_opt = optim.SGD(
         bottom,
