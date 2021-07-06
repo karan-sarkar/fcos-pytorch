@@ -139,7 +139,6 @@ class FCOSHead(nn.Module):
 
     def forward(self, input):
         logits = []
-        logits2 = []
         bboxes = []
         centers = []
 
@@ -147,14 +146,13 @@ class FCOSHead(nn.Module):
             cls_out = self.cls_tower(feat)
 
             logits.append(self.cls_pred(cls_out))
-            logits2.append(self.cls_pred2(cls_out))
             centers.append(self.center_pred(cls_out))
 
             bbox_out = torch.sigmoid(scale(self.bbox_pred(cls_out))) * 1280
 
             bboxes.append(bbox_out)
 
-        return ((logits, logits2), bboxes, centers)
+        return (logits, bboxes, centers)
 
 
 class FCOS(nn.Module):
@@ -167,6 +165,9 @@ class FCOS(nn.Module):
         )
         self.fpn1 = FPN(config.feat_channels, config.out_channel, fpn_top)
         self.head1 = FCOSHead(
+            config.out_channel, config.n_class, config.n_conv, config.prior
+        )
+        self.head2 = FCOSHead(
             config.out_channel, config.n_class, config.n_conv, config.prior
         )
         self.postprocessor = FCOSPostprocessor(
@@ -204,7 +205,8 @@ class FCOS(nn.Module):
         self.to(input.device)
         features = self.backbone(input)
         features1 = self.fpn1(features)
-        (cls_pred1, cls_pred2), box_pred1, center_pred1 = self.head1(features1)
+        cls_pred1, box_pred1, center_pred1 = self.head1(features1)
+        cls_pred2, box_pred2, center_pred2 = self.head2(features1)
         # print(cls_pred, box_pred, center_pred)
         location1 = self.compute_location(features1)
         if self.training:
@@ -217,14 +219,14 @@ class FCOS(nn.Module):
                 'loss_center': loss_center,
             }
             loss_cls, loss_box, loss_center = self.loss(
-                location1, cls_pred2, box_pred1, center_pred1, targets
+                location1, cls_pred2, box_pred2, center_pred2, targets
             )
             losses2 = {
                 'loss_cls': loss_cls,
                 'loss_box': loss_box,
                 'loss_center': loss_center,
             }
-            return ((losses1, (cls_pred1, box_pred1, center_pred1, location1)), (losses2, (cls_pred2, box_pred1, center_pred1, location1)))
+            return ((losses1, (cls_pred1, box_pred1, center_pred1, location1)), (losses2, (cls_pred2, box_pred2, center_pred2, location1)))
 
         else:
             boxes1 = self.postprocessor(
