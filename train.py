@@ -189,8 +189,8 @@ def compare(p, q):
     cls_pred2, box_pred2, center_pred2, location2 = q
     
     
-    cls_p1 = flatten(cls_pred1, 11).softmax(-1)
-    cls_p2 = flatten(cls_pred2, 11).softmax(-1)
+    cls_p1 = flatten(cls_pred1[-2:], 11).softmax(-1)
+    cls_p2 = flatten(cls_pred2[-2:], 11).softmax(-1)
     box1 = flatten(box_pred1, 4)
     box2 = flatten(box_pred2, 4)
     
