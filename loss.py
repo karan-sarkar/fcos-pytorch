@@ -318,7 +318,7 @@ class FCOSLoss(nn.Module):
             center_flat.append(center_pred[i].permute(0, 2, 3, 1).reshape(-1))
 
             labels_flat.append(labels[i].reshape(-1))
-            labels_flat2.append(labels[i].reshape(-1, 1))
+            labels_flat2.append(labels[i].reshape(cls_pred[i].size(0), -1))
             box_targets_flat.append(box_targets[i].reshape(-1, 4))
 
         cls_flat = torch.cat(cls_flat, 0)
