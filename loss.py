@@ -271,7 +271,7 @@ class FCOSLoss(nn.Module):
 
         # Number of positive and hard-negative priors per image
         n_positives = positive_priors.sum(dim=1)  # (N)
-        n_hard_negatives = self.neg_pos_ratio * n_positives  # (N)
+        n_hard_negatives = 3 * n_positives  # (N)
 
         # First, find the loss for all priors
         conf_loss_all = nn.CrossEntropyLoss(reduction = 'none')(predicted_scores.view(-1, n_classes), true_classes.view(-1))  # (N * 8732)
