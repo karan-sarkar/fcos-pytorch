@@ -144,7 +144,7 @@ class FCOSHead(nn.Module):
         for feat, scale in zip(input, self.scales):
             cls_out = feat
             bbox_out = feat
-            s.append(feat)
+            #s.append(feat)
             i = 0
             for a, b in zip(self.cls_tower, self.bbox_tower):
                 cls_out = a(cls_out)
