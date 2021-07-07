@@ -304,8 +304,7 @@ if __name__ == '__main__':
     target_set = COCODataset(args.path2, 'train', preset_transform(args, train=True))
     target_valid_set = COCODataset(args.path2, 'val', preset_transform(args, train=False))
   
-    sample = np.random.choice(len(target_set), 1000, replace=False)
-    target_set = CustomSubset(target_set, sample)
+    
     
     backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
@@ -384,6 +383,8 @@ if __name__ == '__main__':
         )
     else:
         args.ckpt = 0
+        sample = np.random.choice(len(target_set), 1000, replace=False)
+        target_set = CustomSubset(target_set, sample)
     for g in c_opt.param_groups:
         g['lr'] = args.lr
     for g in g_opt.param_groups:
