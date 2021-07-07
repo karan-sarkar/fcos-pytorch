@@ -136,7 +136,7 @@ def compare(cls_pred1, cls_pred2):
     mx = F.one_hot(mx, 10).float()
     return ((bceloss(cls_p2, mx) * mask).mean(), float(mask.mean()))
 
-def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, device):
+def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, device, sample):
     model.train()
 
     pbar = tqdm(loader, dynamic_ncols=True)
@@ -261,7 +261,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         davg = sum(dlosses) / len(dlosses)
         
         if i % 100 == 0:
-            torch.save((model, c_opt, g_opt, ema_model), 'style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+            torch.save((model, c_opt, g_opt, ema_model, sample), 'style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         
         if get_rank() == 0:
             pbar.set_description(
@@ -368,7 +368,7 @@ if __name__ == '__main__':
     )
     
     if args.ckpt is not None:
-        (model, c, g, ema_model) = torch.load('style_fcos_' + str(args.ckpt) + '.pth')
+        (model, c, g, ema_model, sample) = torch.load('style_fcos_' + str(args.ckpt) + '.pth')
         if args.rand_class != 'true':
             c_opt = c
             g_opt = g
@@ -383,8 +383,8 @@ if __name__ == '__main__':
         g['lr'] = args.lr2
     
     for epoch in range(args.epoch):
-        train(args, epoch, source_loader, target_loader, model, ema_model, c_opt, g_opt, device)
-        torch.save((model, c_opt, g_opt, ema_model), 'style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        train(args, epoch, source_loader, target_loader, model, ema_model, c_opt, g_opt, device, sample)
+        torch.save((model, c_opt, g_opt, ema_model, sample), 'style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         if epoch % 10 == 0:
             valid(args, epoch, target_valid_loader, target_valid_set, ema_model.ema, device)
             valid(args, epoch, source_valid_loader, source_valid_set, ema_model.ema, device)
