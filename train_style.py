@@ -390,6 +390,18 @@ if __name__ == '__main__':
         g['lr'] = args.lr2
     
     for epoch in range(args.epoch):
+        source_loader = DataLoader(
+            source_set,
+            batch_size=args.batch,
+            shuffle = True,
+            collate_fn=collate_fn(args),
+        )
+        target_loader = DataLoader(
+            target_set,
+            batch_size=args.batch_val,
+            shuffle = True,
+            collate_fn=collate_fn(args),
+        )
         train(args, epoch, source_loader, target_loader, model, ema_model, c_opt, g_opt, device, sample)
         torch.save((model, c_opt, g_opt, ema_model, sample), 'style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         if epoch % 10 == 0:
