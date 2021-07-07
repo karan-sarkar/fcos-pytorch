@@ -247,6 +247,54 @@ class FCOSLoss(nn.Module):
         )
 
         return torch.sqrt(centerness)
+    
+    def compare(self, predicted_scores, true_classes):
+        """
+        Forward propagation.
+        :param predicted_locs: predicted locations/boxes w.r.t the 8732 prior boxes, a tensor of dimensions (N, 8732, 4)
+        :param predicted_scores: class scores for each of the encoded locations/boxes, a tensor of dimensions (N, 8732, n_classes)
+        :param boxes: true  object bounding boxes in boundary coordinates, a list of N tensors
+        :param labels: true object labels, a list of N tensors
+        :return: multibox loss, a scalar
+        """
+        batch_size, n_priors, n_classes = predicted_scores.shape
+
+        # Identify priors that are positive (object/non-background)
+        positive_priors = true_classes != 0  # (N, 8732)
+
+        # CONFIDENCE LOSS
+
+        # Confidence loss is computed over positive priors and the most difficult (hardest) negative priors in each image
+        # That is, FOR EACH IMAGE,
+        # we will take the hardest (neg_pos_ratio * n_positives) negative priors, i.e where there is maximum loss
+        # This is called Hard Negative Mining - it concentrates on hardest negatives in each image, and also minimizes pos/neg imbalance
+
+        # Number of positive and hard-negative priors per image
+        n_positives = positive_priors.sum(dim=1)  # (N)
+        n_hard_negatives = self.neg_pos_ratio * n_positives  # (N)
+
+        # First, find the loss for all priors
+        conf_loss_all = nn.CrossEntropyLoss(reduction = 'none')(predicted_scores.view(-1, n_classes), true_classes.view(-1))  # (N * 8732)
+        conf_loss_all = conf_loss_all.view(batch_size, n_priors)  # (N, 8732)
+        
+        # We already know which priors are positive
+        conf_loss_pos = conf_loss_all[positive_priors]  # (sum(n_positives))
+
+        # Next, find which priors are hard-negative
+        # To do this, sort ONLY negative priors in each image in order of decreasing loss and take top n_hard_negatives
+        conf_loss_neg = conf_loss_all.clone()  # (N, 8732)
+        conf_loss_neg[positive_priors] = 0.  # (N, 8732), positive priors are ignored (never in top n_hard_negatives)
+        conf_loss_neg, _ = conf_loss_neg.sort(dim=1, descending=True)  # (N, 8732), sorted by decreasing hardness
+        hardness_ranks = torch.LongTensor(range(n_priors)).unsqueeze(0).expand_as(conf_loss_neg).to(predicted_scores.device)  # (N, 8732)
+        hard_negatives = hardness_ranks < n_hard_negatives.unsqueeze(1)  # (N, 8732)
+        conf_loss_hard_neg = conf_loss_neg[hard_negatives]  # (sum(n_hard_negatives))
+
+        # As in the paper, averaged over positive priors only, although computed over both positive and hard-negative priors
+        conf_loss = (conf_loss_hard_neg.sum() + conf_loss_pos.sum()) / n_positives.sum().float()  # (), scalar
+
+        # TOTAL LOSS
+
+        return conf_loss
 
     def forward(self, locations, cls_pred, box_pred, center_pred, targets):
         batch = cls_pred[0].shape[0]
@@ -259,27 +307,35 @@ class FCOSLoss(nn.Module):
         center_flat = []
 
         labels_flat = []
+        labels_flat2 = []
+        cls_flat2 = []
         box_targets_flat = []
 
         for i in range(len(labels)):
             cls_flat.append(cls_pred[i].permute(0, 2, 3, 1).reshape(-1, n_class))
+            cls_flat2.append(cls_pred[i].permute(0, 2, 3, 1).reshape(cls_pred[i].size(0), -1, n_class))
             box_flat.append(box_pred[i].permute(0, 2, 3, 1).reshape(-1, 4))
             center_flat.append(center_pred[i].permute(0, 2, 3, 1).reshape(-1))
 
             labels_flat.append(labels[i].reshape(-1))
+            labels_flat2.append(labels[i].reshape(-1, 1))
             box_targets_flat.append(box_targets[i].reshape(-1, 4))
 
         cls_flat = torch.cat(cls_flat, 0)
+        cls_flat2 = torch.cat(cls_flat2, 1)
         box_flat = torch.cat(box_flat, 0)
         center_flat = torch.cat(center_flat, 0)
 
         labels_flat = torch.cat(labels_flat, 0)
+        labels_flat2 = torch.cat(labels_flat2, 1)
         box_targets_flat = torch.cat(box_targets_flat, 0)
+        
+        print(cls_flat2.shape, labels_flat2.shape)
 
         pos_id = torch.nonzero(labels_flat > 0).squeeze(1)
 
         #cls_loss = self.cls_loss(cls_flat, labels_flat.int()) / (pos_id.numel() + batch)
-        cls_loss = nn.CrossEntropyLoss()(cls_flat, labels_flat.long())
+        cls_loss = self.compare(cls_flat, labels_flat.long())
         
         box_flat = box_flat[pos_id]
         center_flat = center_flat[pos_id]
