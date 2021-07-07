@@ -306,7 +306,7 @@ if __name__ == '__main__':
     target_aug_set = COCODataset(args.path2, 'train', preset_transform(args, train=True, augment = True))
     target_valid_set = COCODataset(args.path2, 'val', preset_transform(args, train=False))
   
-    sample = np.random.choice(len(target_set), 1000, replace=False)
+    sample = np.random.choice(len(target_set), 5000, replace=False)
     target_set = AugmentedDataset(target_set, target_aug_set, sample)
     
     backbone = vovnet27_slim(pretrained=False)
