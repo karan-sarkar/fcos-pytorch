@@ -144,11 +144,10 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
     i = 0
     losses = []
     dlosses = []
-    for ((images, targets, _), (target_images, target_aug_images, target_targets)) in zip(pbar, target_loader):
+    for ((images, targets, _), (target_images, target_targets, _)) in zip(pbar, target_loader):
         images = images.to(device)
         targets = [target.to(device) for target in targets]
         target_images = target_images.to(device)
-        target_aug_images = target_aug_images.to(device)
         target_targets = [target.to(device) for target in target_targets]
         if len(targets) != args.batch or len(target_targets) != args.batch_val:
             break
@@ -242,7 +241,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
        
         #0.00001
-        style_loss = args.mul * (source_style.mean(0) - target_style.mean(0)).abs().mean()
+        style_loss = args.mul * (source_style.mean(0) - target_style.mean(0)).pow(2).mean()
         loss +=  style_loss
         del source_style, target_style
         loss.backward()
@@ -302,12 +301,10 @@ if __name__ == '__main__':
     source_set = COCODataset(args.path, 'train', preset_transform(args, train=True))
     source_valid_set = COCODataset(args.path, 'val', preset_transform(args, train=False))
     
-    target_no_set = COCODataset(args.path2, 'train', preset_transform(args, train=True))
-    target_aug_set = COCODataset(args.path2, 'train', preset_transform(args, train=True, augment = True))
-    target_valid_set = COCODataset(args.path2, 'val', preset_transform(args, train=False))
+    target_set = COCODataset(args.path2, 'train', preset_transform(args, train=True))
   
-    sample = np.random.choice(len(target_set), 5000, replace=False)
-    target_set = AugmentedDataset(target_no_set, target_aug_set, sample)
+    sample = np.random.choice(len(target_set), 1000, replace=False)
+    target_set = CustomSubset(target_set, sample)
     
     backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
@@ -354,7 +351,7 @@ if __name__ == '__main__':
         target_set,
         batch_size=args.batch_val,
         sampler = data_sampler(target_set, True, args.distributed),
-        collate_fn=collate_fx(args),
+        collate_fn=collate_fn(args),
     )
     source_valid_loader = DataLoader(
         source_valid_set,
@@ -387,14 +384,6 @@ if __name__ == '__main__':
     for epoch in range(args.epoch):
         #valid(args, epoch, target_valid_loader, target_valid_set, ema_model.ema, device)
         #valid(args, epoch, source_valid_loader, source_valid_set, ema_model.ema, device)
-        np.random.shuffle(sample)
-        target_set = AugmentedDataset(target_no_set, target_aug_set, sample)
-            target_loader = DataLoader(
-            target_set,
-            batch_size=args.batch_val,
-            sampler = data_sampler(target_set, True, args.distributed),
-            collate_fn=collate_fx(args),
-        )
         train(args, epoch, source_loader, target_loader, model, ema_model, c_opt, g_opt, device)
         torch.save((model, c_opt, g_opt, ema_model), 'style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         
