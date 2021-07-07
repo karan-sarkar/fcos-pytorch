@@ -149,9 +149,9 @@ class FCOSHead(nn.Module):
             for a, b in zip(self.cls_tower, self.bbox_tower):
                 cls_out = a(cls_out)
                 bbox_out = b(bbox_out)
-                if isinstance(a, nn.Conv2d) and i <= 0:
+                if isinstance(a, nn.Conv2d) and i <= 1:
                     s.append(cls_out)
-                if isinstance(b, nn.Conv2d) and i <= 0:
+                if isinstance(b, nn.Conv2d) and i <= 1:
                     s.append(bbox_out)
                 i += 1
                     

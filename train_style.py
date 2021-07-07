@@ -175,26 +175,35 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
         
         
-        with torch.no_grad():
-            (_, p) = model(target_images.tensors, targets=target_targets, r=r)
-        (_, q) = model(target_aug_images.tensors, targets=target_targets, r=r)
-        discrep, mask = compare(p, q)
-        del p, q
         
+        (loss_dict, p) = model(target_images.tensors, targets=target_targets, r=r)
+        loss_cls = loss_dict['loss_cls'].mean()
+        loss_box = loss_dict['loss_box'].mean()
+        loss_center = loss_dict['loss_center'].mean()
+        
+        loss += loss_cls + loss_box + loss_center 
+        
+        loss_reduced = reduce_loss_dict(loss_dict)
+        target_cls = float(loss_reduced['loss_cls'].mean().item())
+        target_box = float(loss_reduced['loss_box'].mean().item())
+        target_center = float(loss_reduced['loss_center'].mean().item())
+        
+        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
+        
+       
         
         loss.backward()
+        nn.utils.clip_grad_norm_(model.parameters(), 10)
+        c_opt.step()
+        g_opt.step()
+        ema_model.update(model)
         
-        if sum([p.grad.isnan().any() for p in model.parameters()]) == 0:
-            nn.utils.clip_grad_norm_(model.parameters(), 10)
-            c_opt.step()
-            g_opt.step()
-            ema_model.update(model)
+
+            
+            
+            
+            
         
-        if loss.isnan().sum() + discrep.isnan().sum() > 0:
-            (model, c_opt, g_opt, ema_model) = torch.load('style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
-            
-        del discrep
-            
         g_opt.zero_grad()
         (loss_dict, p, source_style) = model(images.tensors, targets=targets, r=r, style=True)
         loss_cls = loss_dict['loss_cls'].mean()
@@ -203,39 +212,51 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         loss = loss_cls + loss_box + loss_center 
         
-        del loss_cls, loss_box, loss_center, loss_dict, p
-        del images, targets
+        loss_reduced = reduce_loss_dict(loss_dict)
+        cls = float(loss_reduced['loss_cls'].mean().item())
+        box = float(loss_reduced['loss_box'].mean().item())
+        center = float(loss_reduced['loss_center'].mean().item())
         
-        with torch.no_grad():
-            (_, p, target_style) = model(target_images.tensors, targets=target_targets, r=r, style=True)
-        (_, q) = model(target_aug_images.tensors, targets=target_targets, r=r)
-        discrep, mask = compare(p, q)
-        del p, q
+        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
         
         
+        
+        (loss_dict, p, target_style) = model(target_images.tensors, targets=target_targets, r=r, style=True)
+        loss_cls = loss_dict['loss_cls'].mean()
+        loss_box = loss_dict['loss_box'].mean()
+        loss_center = loss_dict['loss_center'].mean()
+        
+        loss += loss_cls + loss_box + loss_center 
+        
+        loss_reduced = reduce_loss_dict(loss_dict)
+        target_cls = float(loss_reduced['loss_cls'].mean().item())
+        target_box = float(loss_reduced['loss_box'].mean().item())
+        target_center = float(loss_reduced['loss_center'].mean().item())
+        
+        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
+        
+        
+        
+        
+        
+        
+       
         #0.00001
-        style_loss = args.mul * (source_style.mean(0) - target_style.mean(0)).pow(2).mean()
-        #loss +=  style_loss
+        style_loss = args.mul * (source_style.mean(0) - target_style.mean(0)).abs().mean()
+        loss +=  style_loss
         del source_style, target_style
         loss.backward()
         
-        if sum([p.grad.isnan().any() for p in model.parameters()]) == 0:
-            nn.utils.clip_grad_norm_(model.parameters(), 10)
-            g_opt.step()
-            ema_model.update(model)
+        nn.utils.clip_grad_norm_(model.parameters(), 10)
+        g_opt.step()
+        ema_model.update(model)
         
-        if loss.isnan().sum() + discrep.isnan().sum() > 0:
-            (model, c_opt, g_opt, ema_model) = torch.load('style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
-            
-            
-            
-            
-            
-            
         
+            
+            
+         
         losses.append(cls + box + center)
-        dlosses.append(float(discrep))
-        discrep = float(discrep)
+        dlosses.append(target_cls + target_box + target_center)
         style = float(style_loss)
         avg = sum(losses) / len(losses)
         davg = sum(dlosses) / len(dlosses)
@@ -246,9 +267,9 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         if get_rank() == 0:
             pbar.set_description(
                 (
-                    f'epoch: {epoch + 1}; cls: {cls:.4f};'
-                    f'box: {box:.4f}; center: {center:.4f}; '
-                    f'avg: {avg:.4f}; davg: {davg:.8f}, discrep: {discrep:.4f}; style: {style:.4f}; mask: {mask:.4f}'
+                    f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {target_cls:.4f};'
+                    f'box: {box:.4f}; target_box: {target_box:.4f}; target_center: {target_center:.4f}; '
+                    f'avg: {avg:.4f}; davg: {davg:.8f}; style: {style:.4f}'
                 )
             )
         i+= 1
@@ -285,14 +306,12 @@ if __name__ == '__main__':
     target_aug_set = COCODataset(args.path2, 'train', preset_transform(args, train=True, augment = True))
     target_valid_set = COCODataset(args.path2, 'val', preset_transform(args, train=False))
   
-    sample = np.random.choice(len(target_set), len(target_set), replace=False)
+    sample = np.random.choice(len(target_set), 1000, replace=False)
     target_set = AugmentedDataset(target_set, target_aug_set, sample)
     
     backbone = vovnet27_slim(pretrained=False)
-    a = torch.load('slim_fcos_66.pth')
-    model = a[0]
-    if isinstance(model, nn.DataParallel):
-        model = model.module
+    model = FCOS(args, backbone)
+    model = model.to(device)
     model = nn.DataParallel(model)
     ema_model = ModelEMA(model, 0.999, device)
     
