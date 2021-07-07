@@ -406,8 +406,8 @@ if __name__ == '__main__':
         train(args, epoch, source_loader, target_loader, model, ema_model, c_opt, g_opt, device, sample)
         torch.save((model, c_opt, g_opt, ema_model, sample), 'style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
         if epoch % 10 == 0:
-            valid(args, epoch, target_valid_loader, target_valid_set, ema_model.ema, device)
-            valid(args, epoch, source_valid_loader, source_valid_set, ema_model.ema, device)
+            valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+            valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         
        
         
