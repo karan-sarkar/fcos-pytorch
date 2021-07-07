@@ -375,6 +375,13 @@ if __name__ == '__main__':
         if isinstance(model, nn.DataParallel):
             model = model.module
         model = nn.DataParallel(model)
+        target_set = CustomSubset(target_set, sample)
+        target_loader = DataLoader(
+            target_set,
+            batch_size=args.batch_val,
+            sampler = data_sampler(target_set, True, args.distributed),
+            collate_fn=collate_fn(args),
+        )
     else:
         args.ckpt = 0
     for g in c_opt.param_groups:
