@@ -302,6 +302,7 @@ if __name__ == '__main__':
     source_valid_set = COCODataset(args.path, 'val', preset_transform(args, train=False))
     
     target_set = COCODataset(args.path2, 'train', preset_transform(args, train=True))
+    target_valid_set = COCODataset(args.path2, 'val', preset_transform(args, train=False))
   
     sample = np.random.choice(len(target_set), 1000, replace=False)
     target_set = CustomSubset(target_set, sample)
