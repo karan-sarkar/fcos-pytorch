@@ -329,13 +329,11 @@ class FCOSLoss(nn.Module):
         labels_flat = torch.cat(labels_flat, 0)
         labels_flat2 = torch.cat(labels_flat2, 1)
         box_targets_flat = torch.cat(box_targets_flat, 0)
-        
-        print(cls_flat2.shape, labels_flat2.shape)
 
         pos_id = torch.nonzero(labels_flat > 0).squeeze(1)
 
         #cls_loss = self.cls_loss(cls_flat, labels_flat.int()) / (pos_id.numel() + batch)
-        cls_loss = self.compare(cls_flat, labels_flat.long())
+        cls_loss = self.compare(cls_flat2, labels_flat2.long())
         
         box_flat = box_flat[pos_id]
         center_flat = center_flat[pos_id]
