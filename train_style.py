@@ -124,17 +124,18 @@ def flatten(cls_pred):
     cls_flat = torch.cat(cls_flat, 0)
     return cls_flat
 
-def compare(cls_pred1, cls_pred2):
-    batch = cls_pred1[0].shape[0]
-    cls_p1 = flatten(cls_pred1).sigmoid()
-    cls_p2 = flatten(cls_pred2).sigmoid()
-    if cls_p1.shape[0] != cls_p2.shape[0]:
-        return (torch.zeros(1), 0)
+def high(x):
+    return bceloss(x, torch.ones_like(x))
+
+def low(x):
+    return bceloss(x, torch.zeros_like(x))
+
+def compare(a, b):
+    x = (a * b).mean()
+    y = (a * a).mean()
+    return high(x) - high(y)
     
-    mx = torch.argmax(cls_p1, 1)
-    mask = cls_p1.max(1)[0].ge(0.25).float().view(-1, 1)
-    mx = F.one_hot(mx, 10).float()
-    return ((bceloss(cls_p2, mx) * mask).mean(), float(mask.mean()))
+    
 
 def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, device, sample):
     model.train()
@@ -241,7 +242,8 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
        
         #0.00001
-        style_loss = args.mul * (source_style.mean(0) - target_style.mean(0)).pow(2).mean()
+        #style_loss = args.mul * (source_style.mean(0) - target_style.mean(0)).pow(2).mean()
+        style_loss = args.mul * compare(source_style.mean(0), target_style.mean(0))
         loss +=  style_loss
         del source_style, target_style
         loss.backward()
