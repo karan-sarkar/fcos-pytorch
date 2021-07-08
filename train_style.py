@@ -241,7 +241,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
        
         #0.00001
-        style_loss = args.mul * ((source_style.mean(0) - target_style.mean(0)) / (source_style.mean(0) - target_style.mean(0))).pow(2).mean()
+        style_loss = args.mul * (source_style.mean(0) - target_style.mean(0)).pow(2).mean()
         loss +=  style_loss
         del source_style, target_style
         loss.backward()
@@ -308,6 +308,7 @@ if __name__ == '__main__':
     
     backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
+    model = torch.load('slim_fcos_66.pth')[0]
     model = model.to(device)
     model = nn.DataParallel(model)
     ema_model = ModelEMA(model, 0.999, device)
