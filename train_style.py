@@ -309,6 +309,8 @@ if __name__ == '__main__':
     backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
     model = torch.load('slim_fcos_66.pth')[0]
+    if isinstance(model, nn.DataParallel):
+        model = model.module
     model = model.to(device)
     model = nn.DataParallel(model)
     ema_model = ModelEMA(model, 0.999, device)
