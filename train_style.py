@@ -132,7 +132,7 @@ def low(x):
 
 def compare(a, b):
     x = (a * b).mean()
-    y = (a * a).mean()
+    y = (a * a.flip(0)).mean()
     return high(x) + low(y)
     
     
@@ -243,7 +243,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
        
         #0.00001
         #style_loss = args.mul * (source_style.mean(0) - target_style.mean(0)).pow(2).mean()
-        style_loss = args.mul * compare(source_style.mean(0), target_style.mean(0))
+        style_loss = args.mul * compare(source_style, target_style)
         loss +=  style_loss
         del source_style, target_style
         loss.backward()
