@@ -111,7 +111,7 @@ def freeze(model, section, on):
 
 focal_loss = SigmoidFocalLoss(2.0, 0.25)
 l1loss = nn.L1Loss(reduction='none')
-bceloss = nn.BCELoss(reduction='none')
+bceloss = nn.BCEWithLogitsLoss()
 
 def flatten(cls_pred):
     batch = cls_pred[0].shape[0]
