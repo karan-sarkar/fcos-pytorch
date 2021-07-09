@@ -194,8 +194,8 @@ def compare(p, q):
     cls_p2 = flatten(cls_pred2, 11).softmax(-1) ** args.temp
     box_p1 = flatten(box_pred1, 4).relu()
     box_p2 = flatten(box_pred2, 4).relu()
-    center_p1 = flatten(center_pred1, 4).sigmoid()
-    center_p2 = flatten(center_pred2, 4).sigmoid()
+    center_p1 = flatten(center_pred1, 1).sigmoid()
+    center_p2 = flatten(center_pred2, 1).sigmoid()
     
     #mask = (cls_p1[:, 1:].max(1)[0].ge(args.mask).float()) * (cls_p2[:, 1:].max(1)[0].ge(args.mask).float())
     
