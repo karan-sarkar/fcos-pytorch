@@ -243,6 +243,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         loss += loss_cls2 + loss_box2 + loss_center2
         
         del loss_dict2, loss_cls2, loss_box2, loss_center2
+        del images, targets
         
         (loss_dict, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
@@ -261,7 +262,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         g_opt.step()
             
-        
+        del target_images, target_targets
         
         
         discrep_loss = dloss.item()
