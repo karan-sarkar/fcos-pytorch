@@ -176,7 +176,12 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         
         
-        (loss_dict, p) = model(target_images.tensors, targets=target_targets, r=r)
+        
+        model.eval()
+        pred = model(target_images.tensors, image_sizes=target_images.sizes, r=r)
+        model.train()
+        
+        (loss_dict, p) = model(target_images.tensors, targets=pred, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -188,7 +193,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         target_box = float(loss_reduced['loss_box'].mean().item())
         target_center = float(loss_reduced['loss_center'].mean().item())
         
-        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
+        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p, pred
         
        
         
@@ -220,8 +225,11 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
         
         
+        model.eval()
+        pred = model(target_images.tensors, image_sizes=target_images.sizes, r=r)
+        model.train()
         
-        (loss_dict, p, target_style) = model(target_images.tensors, targets=target_targets, r=r, style=True)
+        (loss_dict, p, target_style) = model(target_images.tensors, targets=pred, r=r, style=True)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -379,7 +387,7 @@ if __name__ == '__main__':
         if isinstance(model, nn.DataParallel):
             model = model.module
         model = nn.DataParallel(model)
-        target_set = CustomSubset(target_set, sample)
+        #target_set = CustomSubset(target_set, sample)
         target_loader = DataLoader(
             target_set,
             batch_size=args.batch_val,
@@ -389,7 +397,7 @@ if __name__ == '__main__':
     else:
         args.ckpt = 0
         sample = np.random.choice(len(target_set), 1000, replace=False)
-        target_set = CustomSubset(target_set, sample)
+        #target_set = CustomSubset(target_set, sample)
     for g in c_opt.param_groups:
         g['lr'] = args.lr
     for g in g_opt.param_groups:
