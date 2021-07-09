@@ -217,6 +217,12 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         
         if len(targets) != len(target_targets):
             break
+            
+        images = images.to(device)
+        targets = [target.to(device) for target in targets]
+        target_images = target_images.to(device)
+        target_targets = [target.to(device) for target in target_targets]
+        r = torch.range(0, len(targets) - 1).to(device)
         
         g_opt.zero_grad()
         (loss_dict, _), (loss_dict2, _) = model(images.tensors, targets=targets, r=r)
