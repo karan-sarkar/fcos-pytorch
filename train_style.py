@@ -193,7 +193,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         target_box = float(loss_reduced['loss_box'].mean().item())
         target_center = float(loss_reduced['loss_center'].mean().item())
         
-        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p, pred
+        del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
         
        
         
@@ -224,10 +224,6 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
         
-        
-        model.eval()
-        pred = model.module(target_images.tensors, image_sizes=target_images.sizes, r=r)
-        model.train()
         
         (loss_dict, p, target_style) = model(target_images.tensors, targets=pred, r=r, style=True)
         loss_cls = loss_dict['loss_cls'].mean()
