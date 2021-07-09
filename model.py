@@ -128,6 +128,7 @@ class FCOSHead(nn.Module):
         self.cls_pred = nn.Conv2d(in_channel, n_class, 3, padding=1)
         self.bbox_pred = nn.Conv2d(in_channel, 4, 3, padding=1)
         self.center_pred = nn.Conv2d(in_channel, 1, 3, padding=1)
+        self.dropout = nn.Dropout(0.3)
 
         self.apply(init_conv_std)
 
@@ -136,19 +137,25 @@ class FCOSHead(nn.Module):
 
         self.scales = nn.ModuleList([Scale(1.0) for _ in range(5)])
 
-    def forward(self, input):
+    def forward(self, input, dropout=True):
         logits = []
         bboxes = []
         centers = []
 
         for feat, scale in zip(input, self.scales):
+            if dropout:
+                feat = self.dropout(feat)
             cls_out = self.cls_tower(feat)
+            if dropout:
+                cls_out = self.dropout(cls_out)
 
             logits.append(self.cls_pred(cls_out))
             centers.append(self.center_pred(cls_out))
-
-            #bbox_out = self.cls_tower(feat)
-            bbox_out = torch.exp(scale(self.bbox_pred(cls_out)))
+    
+            bbox_out = self.cls_tower(feat)
+            if dropout:
+                bbox_out = self.dropout(bbox_out)
+            bbox_out = torch.exp(scale(self.bbox_pred(bbox_out)))
 
             bboxes.append(bbox_out)
 
@@ -165,10 +172,6 @@ class FCOS(nn.Module):
         )
         self.fpn1 = FPN(config.feat_channels, config.out_channel, fpn_top)
         self.head1 = FCOSHead(
-            config.out_channel, config.n_class, config.n_conv, config.prior
-        )
-        self.fpn2 = FPN(config.feat_channels, config.out_channel, fpn_top)
-        self.head2 = FCOSHead(
             config.out_channel, config.n_class, config.n_conv, config.prior
         )
         self.postprocessor = FCOSPostprocessor(
@@ -200,20 +203,21 @@ class FCOS(nn.Module):
 
         self.apply(freeze_bn)
 
-    def forward(self, input, image_sizes=None, targets=None, r = None):
+    def forward(self, input, image_sizes=None, targets=None, r = None, dropout=True):
         if r is not None and targets is not None:
             targets = [targets[int(i)].to(input.device) for i in r.tolist()]
         self.to(input.device)
         features = self.backbone(input)
         features1 = self.fpn1(features)
-        cls_pred1, box_pred1, center_pred1 = self.head1(features1)
+        cls_pred1, box_pred1, center_pred1 = self.head1(features1, dropout)
         # print(cls_pred, box_pred, center_pred)
         location1 = self.compute_location(features1)
-        
-        features2 = self.fpn2(features)
-        cls_pred2, box_pred2, center_pred2 = self.head2(features1)
+       
+        if dropout:
+            cls_pred2, box_pred2, center_pred2 = self.head2(features1, dropout)
+        else:
+            cls_pred2, box_pred2, center_pred2 = cls_pred1, box_pred1, center_pred1
         # print(cls_pred, box_pred, center_pred)
-        location2 = self.compute_location(features1)
         if self.training:
             loss_cls, loss_box, loss_center = self.loss(
                 location1, cls_pred1, box_pred1, center_pred1, targets
@@ -231,7 +235,7 @@ class FCOS(nn.Module):
                 'loss_box': loss_box,
                 'loss_center': loss_center,
             }
-            return ((losses1, (cls_pred1, box_pred1, center_pred1, location1)), (losses2, (cls_pred2, box_pred2, center_pred2, location2)))
+            return ((losses1, (cls_pred1, box_pred1, center_pred1, location1)), (losses2, (cls_pred2, box_pred2, center_pred2, location1)))
 
         else:
             boxes1 = self.postprocessor(
