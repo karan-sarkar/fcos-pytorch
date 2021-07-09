@@ -178,7 +178,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         
         model.eval()
-        pred = model(target_images.tensors, image_sizes=target_images.sizes, r=r)
+        pred = model.module(target_images.tensors, image_sizes=target_images.sizes, r=r)
         model.train()
         
         (loss_dict, p) = model(target_images.tensors, targets=pred, r=r)
@@ -226,7 +226,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         
         model.eval()
-        pred = model(target_images.tensors, image_sizes=target_images.sizes, r=r)
+        pred = model.module(target_images.tensors, image_sizes=target_images.sizes, r=r)
         model.train()
         
         (loss_dict, p, target_style) = model(target_images.tensors, targets=pred, r=r, style=True)
