@@ -214,7 +214,7 @@ class FCOS(nn.Module):
         location1 = self.compute_location(features1)
        
         if dropout:
-            cls_pred2, box_pred2, center_pred2 = self.head2(features1, dropout)
+            cls_pred2, box_pred2, center_pred2 = self.head1(features1, dropout)
         else:
             cls_pred2, box_pred2, center_pred2 = cls_pred1, box_pred1, center_pred1
         # print(cls_pred, box_pred, center_pred)
