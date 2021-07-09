@@ -234,9 +234,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         box = float(loss_box)
         center = float(loss_center)
         
-        del loss_dict, loss_cls, loss_box, loss_center
-
         loss = loss_cls + loss_box + loss_center
+        del loss_dict, loss_cls, loss_box, loss_center
         
         loss_cls2 = loss_dict2['loss_cls'].mean()
         loss_box2 = loss_dict2['loss_box'].mean()
