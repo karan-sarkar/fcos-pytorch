@@ -277,8 +277,8 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         if get_rank() == 0:
             pbar.set_description(
                 (
-                    f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {loss_cls_target:.4f};'
-                    f'box: {box:.4f}; target_box: {loss_box_target:.4f}; center: {center:.4f}; target_center: {loss_center_target:.4f};'
+                    f'epoch: {epoch + 1}; cls: {cls:.4f}; target_cls: {target_cls:.4f};'
+                    f'box: {box:.4f}; target_box: {target_box:.4f}; center: {center:.4f}; target_center: {target_center:.4f};'
                     f'cls_discrep: {cls_discrep:.8f}; box_discrep: {box_discrep:.8f};'
                     f'avg: {avg:.4f}; discrep_avg: {davg:.8f};'
                 )
