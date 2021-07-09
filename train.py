@@ -230,6 +230,11 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
         
+        cls = float(loss_cls)
+        box = float(loss_box)
+        center = float(loss_center)
+        
+        del loss_dict, loss_cls, loss_box, loss_center
 
         loss = loss_cls + loss_box + loss_center
         
@@ -238,15 +243,26 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         loss_center2 = loss_dict2['loss_center'].mean()
         loss += loss_cls2 + loss_box2 + loss_center2
         
-        (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
+        del loss_dict2, loss_cls2, loss_box2, loss_center2
+        
+        (loss_dict, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
+        loss_cls = loss_dict['loss_cls'].mean()
+        loss_box = loss_dict['loss_box'].mean()
+        loss_center = loss_dict['loss_center'].mean()
+        
+        target_cls = float(loss_cls)
+        target_box = float(loss_box)
+        target_center = float(loss_center)
+        del loss_dict, loss_cls, loss_box, loss_center
+
         cls_discrep, box_discrep, mask, m = compare(p, q)
         dloss = cls_discrep + box_discrep
-        loss = dloss
+        loss += dloss
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         g_opt.step()
             
-        del loss_cls, loss_box, loss_center, loss_dict2, loss_dict, loss_cls2, loss_box2, loss_center2
+        
         
         
         discrep_loss = dloss.item()
