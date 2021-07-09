@@ -134,7 +134,7 @@ def low(x):
 def compare(a, b):
     x = (a * b).mean()
     y = (a * a.flip(0)).mean()
-    return high(x) + low(y)
+    return y.log() - x.log()
     
     
 
