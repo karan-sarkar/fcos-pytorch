@@ -196,7 +196,7 @@ def compare(p, q):
     
     
     
-    return (l1loss(cls_p1, cls_p2), 0.1 * l1loss(box1, box2), 0)
+    return (l1loss(cls_p1, cls_p2), 0.001 * l1loss(box1, box2), 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
