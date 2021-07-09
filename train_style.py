@@ -226,8 +226,9 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
         
-        '''
+        
         (loss_dict, p, target_style) = model(target_images.tensors, targets=target_targets, r=r, style=True)
+        '''
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
