@@ -177,13 +177,9 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         
         
-       
-        model.eval()
-        with torch.no_grad():
-            pred = model.module(target_images.tensors, image_sizes=target_images.sizes, r=r)
-        model.train()
+      
         
-        (loss_dict, p) = model(target_images.tensors, targets=pred, r=r)
+        (loss_dict, p) = model(target_images.tensors, targets=target_targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
