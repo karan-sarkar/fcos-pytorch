@@ -177,7 +177,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         
         
-        
+       
         model.eval()
         with torch.no_grad():
             pred = model.module(target_images.tensors, image_sizes=target_images.sizes, r=r)
@@ -188,7 +188,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
         
-        loss += loss_cls + loss_box + loss_center 
+        #loss += loss_cls + loss_box + loss_center 
         
         loss_reduced = reduce_loss_dict(loss_dict)
         target_cls = float(loss_reduced['loss_cls'].mean().item())
@@ -226,8 +226,8 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         
         del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
         
-        
-        (loss_dict, p, target_style) = model(target_images.tensors, targets=pred, r=r, style=True)
+        '''
+        (loss_dict, p, target_style) = model(target_images.tensors, targets=target_targets, r=r, style=True)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
@@ -240,7 +240,7 @@ def train(args, epoch, loader, target_loader, model, ema_model, c_opt, g_opt, de
         target_center = float(loss_reduced['loss_center'].mean().item())
         
         del loss_cls, loss_box, loss_center, loss_dict, loss_reduced, p
-        
+        ''''
         
         
         
@@ -414,10 +414,10 @@ if __name__ == '__main__':
             shuffle = True,
             collate_fn=collate_fn(args),
         )
-        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
-        valid(args, epoch, source_valid_loader, source_valid_set, model, device)
         train(args, epoch, source_loader, target_loader, model, ema_model, c_opt, g_opt, device, sample)
         torch.save((model, c_opt, g_opt, ema_model, sample), 'style_fcos_' + str(args.ckpt + epoch + 1) + '.pth')
+        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        valid(args, epoch, source_valid_loader, source_valid_set, model, device)
             
         
        
