@@ -128,7 +128,6 @@ class FCOSHead(nn.Module):
         self.cls_pred = nn.Conv2d(in_channel, n_class, 3, padding=1)
         self.bbox_pred = nn.Conv2d(in_channel, 4, 3, padding=1)
         self.center_pred = nn.Conv2d(in_channel, 1, 3, padding=1)
-        self.dropout = nn.Dropout(0.3)
 
         self.apply(init_conv_std)
 
@@ -141,6 +140,7 @@ class FCOSHead(nn.Module):
         logits = []
         bboxes = []
         centers = []
+        my_dropout = nn.Dropout(0.3)
 
         for feat, scale in zip(input, self.scales):
             if dropout:
@@ -153,9 +153,9 @@ class FCOSHead(nn.Module):
                 bbox_out = b(bbox_out)
                 
                 if dropout and isinstance(a, nn.Conv2d):
-                    cls_out = self.dropout(cls_out)
+                    cls_out = my_dropout(cls_out)
                 if dropout and isinstance(b, nn.Conv2d):
-                    bbox_out = self.dropout(bbox_out)
+                    bbox_out = my_dropout(bbox_out)
                 
             
             

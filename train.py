@@ -327,6 +327,9 @@ if __name__ == '__main__':
 
     backbone = vovnet57(pretrained=False)
     model = FCOS(args, backbone)
+    model = torch.load('slim_fcos_66.pth')[0]
+    if isinstance(model, nn.DataParallel):
+        model = model.module
     model = nn.DataParallel(model)
     
     bottom = [p for n, p in model.named_parameters() if ('head' not in n)]
