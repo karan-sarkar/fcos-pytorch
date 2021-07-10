@@ -144,7 +144,7 @@ class FCOSHead(nn.Module):
 
         for feat, scale in zip(input, self.scales):
             if dropout:
-                feat = self.dropout(feat)
+                feat = my_dropout(feat)
             cls_out = feat
             bbox_out = feat
             
