@@ -145,16 +145,25 @@ class FCOSHead(nn.Module):
         for feat, scale in zip(input, self.scales):
             if dropout:
                 feat = self.dropout(feat)
-            cls_out = self.cls_tower(feat)
-            if dropout:
-                cls_out = self.dropout(cls_out)
+            cls_out = feat
+            bbox_out = feat
+            
+            for a,b in zip(self.cls_tower, self.bbox_tower):
+                cls_out = a(cls_out)
+                bbox_out = b(bbox_out)
+                
+                if dropout and isinstance(a, nn.Conv2d):
+                    cls_out = self.dropout(cls_out)
+                if dropout and isinstance(b, nn.Conv2d):
+                    bbox_out = self.dropout(bbox_out)
+                
+            
+            
+            
+            
 
             logits.append(self.cls_pred(cls_out))
             centers.append(self.center_pred(cls_out))
-    
-            bbox_out = self.cls_tower(feat)
-            if dropout:
-                bbox_out = self.dropout(bbox_out)
             bbox_out = torch.exp(scale(self.bbox_pred(bbox_out)))
 
             bboxes.append(bbox_out)
