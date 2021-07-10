@@ -325,7 +325,7 @@ if __name__ == '__main__':
     target_valid_set = CustomSubset(target, target_sample[int(0.9 * len(target_sample)):])
     '''
 
-    backbone = vovnet57(pretrained=False)
+    backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
     model = torch.load('slim_fcos_66.pth')[0]
     if isinstance(model, nn.DataParallel):
