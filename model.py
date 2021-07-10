@@ -104,7 +104,7 @@ class FCOSHead(nn.Module):
     def __init__(self, in_channel, n_class, n_conv, prior):
         super().__init__()
 
-        #n_class = n_class - 1
+        n_class = n_class - 1
 
         cls_tower = []
         bbox_tower = []
