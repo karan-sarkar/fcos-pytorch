@@ -69,12 +69,12 @@ def valid(args, epoch, loader, dataset, m, device):
         targets = [target.to(device) for target in targets]
         r = torch.range(0, len(targets) - 1).to(device)
         model.eval()
-        pred = model(images.tensors, image_sizes=images.sizes, r=r, dropout=False)
+        pred = model(images.tensors, image_sizes=images.sizes, r=r)
         
         
         model.train()
         
-        (loss_dict, _), (loss_dict2, _) = model(images.tensors, targets=targets, r=r, dropout=False)
+        (loss_dict, _), (loss_dict2, _) = model(images.tensors, targets=targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
