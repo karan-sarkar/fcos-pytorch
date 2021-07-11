@@ -100,6 +100,9 @@ class FPNTopP6P7(nn.Module):
         return p6, p7
 
 
+
+
+
 class FCOSHead(nn.Module):
     def __init__(self, in_channel, n_class, n_conv, prior):
         super().__init__()
@@ -154,6 +157,28 @@ class FCOSHead(nn.Module):
 
         return (logits, bboxes, centers)
 
+class ExtraConv(nn.Module):
+    def __init__(self, in_channel):
+        super().__init__()
+
+        conv_tower = []
+
+        for i in range(3):
+            conv_tower.append(
+                nn.Conv2d(in_channel, in_channel, 1, padding=0, bias=False)
+            )
+            conv_tower.append(nn.ReLU())
+
+        self.conv_tower = nn.Sequential(*conv_tower)
+
+    def forward(self, input):
+        outputs = []
+
+        for feat, in input:
+            output.append(self.conv_tower(feat))
+
+        return outputs
+
 
 class FCOS(nn.Module):
     def __init__(self, config, backbone):
@@ -163,6 +188,7 @@ class FCOS(nn.Module):
         fpn_top = FPNTopP6P7(
             config.feat_channels[-1], config.out_channel, use_p5=config.use_p5
         )
+        self.convs = ExtraConv(config.out_channel)
         self.fpn1 = FPN(config.feat_channels, config.out_channel, fpn_top)
         self.head1 = FCOSHead(
             config.out_channel, config.n_class, config.n_conv, config.prior
@@ -205,6 +231,7 @@ class FCOS(nn.Module):
         self.to(input.device)
         features = self.backbone(input)
         features1 = self.fpn1(features)
+        features1 = self.convs(features1)
         cls_pred1, box_pred1, center_pred1 = self.head1(features1)
         cls_pred2, box_pred2, center_pred2 = self.head2(features1)
         # print(cls_pred, box_pred, center_pred)
