@@ -196,7 +196,8 @@ def compare(p, q):
     
     
     
-    return (l1loss(cls_p1, cls_p2), 0.005 * l1loss(box1, box2), 0)
+    #return (l1loss(cls_p1, cls_p2), 0, 0)
+    return (0, 0, 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
     model.train()
@@ -276,7 +277,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         (loss_dict2, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
         
         cls_discrep, box_discrep, center_discrep = compare(p, q)
-        dloss = box_discrep
+        dloss = cls_discrep
         
         loss_reduced = reduce_loss_dict(loss_dict2)
         loss_cls_target = loss_reduced['loss_cls'].mean().item()
@@ -299,7 +300,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             
             (_, p), (_, q)  = model(target_images.tensors, targets=target_targets, r=r)
             cls_discrep, box_discrep, center_discrep = compare(p, q)
-            dloss = box_discrep
+            dloss = cls_discrep
             loss = loss_cls + loss_box + loss_center
             
             loss_cls2 = loss_dict2['loss_cls'].mean()
