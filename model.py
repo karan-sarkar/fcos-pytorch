@@ -174,8 +174,8 @@ class ExtraConv(nn.Module):
     def forward(self, input):
         outputs = []
 
-        for feat, in input:
-            output.append(self.conv_tower(feat))
+        for feat in input:
+            outputs.append(self.conv_tower(feat))
 
         return outputs
 

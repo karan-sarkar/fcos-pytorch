@@ -196,9 +196,8 @@ def compare(p, q):
     
     no_class = cls_p1[:, 0].view(-1)
     rank = no_class.argsort()
-    a = n_class[rank[100]]
-    b = n_class[rank[-100]]
-    print(a, b)
+    a = no_class[rank[750]]
+    b = no_class[rank[-750]]
     mask = no_class.le(a).logical_or(no_class.ge(b))
     
     return (l1loss(cls_p1[mask], cls_p2[mask]), 0, 0)
@@ -289,7 +288,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
         loss_box_target = loss_reduced['loss_box'].mean().item()
         loss_center_target = loss_reduced['loss_center'].mean().item()
         
-        #loss -= dloss
+        loss -= dloss
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         c_opt.step()
@@ -313,7 +312,7 @@ def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
             loss_center2 = loss_dict2['loss_center'].mean()
             loss += loss_cls2 + loss_box2 + loss_center2
             
-            #loss += dloss
+            loss += dloss
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             g_opt.step()
@@ -357,7 +356,7 @@ if __name__ == '__main__':
     args = get_args()
 
     n_gpu = int(os.environ['WORLD_SIZE']) if 'WORLD_SIZE' in os.environ else 1
-    args.distributed = False
+    args.distributed = True
 
     if args.distributed:
         torch.cuda.set_device(args.local_rank)
@@ -383,7 +382,7 @@ if __name__ == '__main__':
 
     backbone = vovnet27_slim(pretrained=False)
     model = FCOS(args, backbone)
-    model = nn.DataParallel(model)
+    #model = nn.DataParallel(model)
     
     bottom = [p for n, p in model.named_parameters() if ('head' not in n)]
     top = [p for n, p in model.named_parameters() if ('head' in n)]
