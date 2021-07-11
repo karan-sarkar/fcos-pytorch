@@ -194,9 +194,14 @@ def compare(p, q):
     box1 = flatten(box_pred1, 4)
     box2 = flatten(box_pred2, 4)
     
+    no_class = cls_p1[:, 0].view(-1)
+    rank = no_class.argsort()
+    a = n_class[rank[100]]
+    b = n_class[rank[-100]]
+    print(a, b)
+    mask = no_class.le(a).logical_or(no_class.ge(b))
     
-    
-    return (l1loss(cls_p1, cls_p2), 0, 0)
+    return (l1loss(cls_p1[mask], cls_p2[mask]), 0, 0)
     #return (0, 0, 0)
 
 def train(args, epoch, loader, target_loader, model, c_opt, g_opt, device):
