@@ -152,7 +152,7 @@ def train(args, epoch, loader, target_loader, cyclegan, c_opt, g_opt, device):
         loss = gen_loss + rec_loss
         loss.backward()
         g_opt.step()
-        del rec_source_x, rec_target_x, rec_loss, gen_loss, loss
+        del rec_source_x, rec_target_x, loss
         del source_x, target_x
         
         
@@ -167,6 +167,7 @@ def train(args, epoch, loader, target_loader, cyclegan, c_opt, g_opt, device):
                 )
             )
         i+= 1
+        del rec_loss, gen_loss
 
 
 def data_sampler(dataset, shuffle, distributed):
@@ -267,7 +268,7 @@ if __name__ == '__main__':
         collate_fn=collate_fn(args),
     )
     
-    (model, _, _) = torch.load('baseline_models/slim_fcos_67.pth')
+    (model, _, _) = torch.load('slim_fcos_66.pth')
     model = model.to(device)
     
     if args.ckpt is not None:
