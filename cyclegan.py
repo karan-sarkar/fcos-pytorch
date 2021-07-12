@@ -109,16 +109,12 @@ def low(x):
 def train(args, epoch, loader, target_loader, cyclegan, c_opt, g_opt, device):
     C1, C2, G1, G2 = cyclegan
 
-    if get_rank() == 0:
-        pbar = tqdm(zip(loader, target_loader), dynamic_ncols=True)
-
-    else:
-        pbar = loader
+    pbar = tqdm(target_loader)
     
     i = 0
     losses = []
     dlosses = []
-    for (source_x, _, _), (target_x, _, _) in pbar:
+    for (source_x, _, _), (target_x, _, _) in zip(loader, pbar):
         source_x = source_x.tensors
         target_x = target_x.tensors
 
@@ -285,7 +281,7 @@ if __name__ == '__main__':
         g['lr'] = args.lr2
     
     for epoch in range(args.epoch):
-        valid(args, epoch, target_valid_loader, target_valid_set, model, G1, device, cycle=False)
+        #valid(args, epoch, target_valid_loader, target_valid_set, model, G1, device, cycle=False)
         train(args, epoch, source_loader, target_loader, (C1, C2, G1, G2), c_opt, g_opt, device)
         torch.save((C1, C2, G1, G2, c_opt, g_opt), 'cyclegan_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, target_valid_loader, target_valid_set, model, G1, device)
