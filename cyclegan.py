@@ -126,19 +126,33 @@ def train(args, epoch, loader, target_loader, cyclegan, c_opt, g_opt, device):
         
         # Train Discriminators
         c_opt.zero_grad()
-        loss = high(C1(source_x)) + high(C2(target_x)) + low(C1(G1(target_x))) + low(C2(G2(source_x)))
+        source_conf = C1(source_x)
+        target_conf = C2(target_x)
+        fake_source_x = G1(target_x)
+        fake_target_x = G2(source_x)
+        fake_source_conf = C1(fake_source_x)
+        fake_target_conf = C2(fake_target_x)
+        loss = high(source_conf) + high(target_conf) + low(fake_source_conf) + low(fake_target_conf)
         loss.backward()
         c_opt.step()
+        del source_conf, target_conf, fake_source_x, fake_target_x, fake_source_conf, fake_target_conf, loss
         
         # Train Generators
         g_opt.zero_grad()
         fake_source_x = G1(target_x)
         fake_target_x = G2(source_x)
-        gen_loss = high(C1(fake_source_x)) + high(C2(fake_target_x))
-        rec_loss = (source_x - G1(fake_target_x)).square().mean() + (target_x - G2(fake_source_x)).square().mean()
+        fake_source_conf = C1(fake_source_x)
+        fake_target_conf = C2(fake_target_x)
+        gen_loss = high(fake_source_conf) + high(fake_target_conf)
+        del fake_source_conf, fake_target_conf
+        rec_source_x = G1(fake_target_x)
+        rec_target_x = G2(fake_source_x)
+        rec_loss = (source_x - rec_source_x).square().mean() + (target_x - rec_target_x).square().mean()
         loss = gen_loss + rec_loss
         loss.backward()
         g_opt.step()
+        del rec_source_x, rec_target_x, rec_loss, gen_loss, loss
+        del source_x, target_x
         
         
       
