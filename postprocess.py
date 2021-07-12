@@ -19,7 +19,6 @@ class FCOSPostprocessor(nn.Module):
         self, location, cls_pred, box_pred, center_pred, image_sizes
     ):
         batch, channel, height, width = cls_pred.shape
-        print(cls_pred.shape)
 
         cls_pred = cls_pred.view(batch, channel, height, width).permute(0, 2, 3, 1)
         cls_pred = cls_pred.reshape(batch, -1, channel).sigmoid().contiguous()
