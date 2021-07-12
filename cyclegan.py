@@ -21,7 +21,7 @@ from distributed import (
     DistributedSampler,
     all_gather,
 )
-from unet import Unet
+from unet import Unet, Discriminator
 import torchvision.models as models
 
 def accumulate_predictions(predictions):
@@ -206,10 +206,7 @@ if __name__ == '__main__':
 
     G1, G2 = Unet(in_chans=3, out_chans=3, chans=args.chan), Unet(in_chans=3, out_chans=3, chans=args.chan)
     
-    C1 = models.resnet18(pretrained=True)
-    C1.fc = nn.Linear(C1.fc.weight.shape[1], 1)
-    C2 = models.resnet18(pretrained=True)
-    C2.fc = nn.Linear(C2.fc.weight.shape[1], 1)
+    C1, C2 = Discriminator(in_chans=3, out_chans=3, chans=args.chan), Discriminator(in_chans=3, out_chans=3, chans=args.chan)
     
     C1, C2, G1, G2 = nn.DataParallel(C1.to(device)), nn.DataParallel(C2.to(device)), nn.DataParallel(G1.to(device)), nn.DataParallel(G2.to(device))
     
