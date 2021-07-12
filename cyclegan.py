@@ -46,7 +46,7 @@ def accumulate_predictions(predictions):
 
 
 @torch.no_grad()
-def valid(args, epoch, loader, dataset, m, G1, device):
+def valid(args, epoch, loader, dataset, m, G1, device, cycle=True):
     if args.distributed:
         model = model.module
 
@@ -67,7 +67,8 @@ def valid(args, epoch, loader, dataset, m, G1, device):
         model.zero_grad()
 
         images = images.tensors.to(device)
-        images = G1(images)
+        if cycle:
+            images = G1(images)
         targets = [target.to(device) for target in targets]
         r = torch.range(0, len(targets) - 1).to(device)
         model.eval()
@@ -283,6 +284,7 @@ if __name__ == '__main__':
         g['lr'] = args.lr2
     
     for epoch in range(args.epoch):
+        valid(args, epoch, target_valid_loader, target_valid_set, model, G1, device, cycle=False)
         train(args, epoch, source_loader, target_loader, (C1, C2, G1, G2), c_opt, g_opt, device)
         torch.save((C1, C2, G1, G2, c_opt, g_opt), 'cyclegan_' + str(args.ckpt + epoch + 1) + '.pth')
         valid(args, epoch, target_valid_loader, target_valid_set, model, G1, device)
