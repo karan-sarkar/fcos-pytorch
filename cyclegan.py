@@ -65,14 +65,13 @@ def valid(args, epoch, loader, dataset, m, G1, device, cycle=True):
     losses = []
     for images, targets, ids in pbar:
         model.zero_grad()
-
-        images = images.tensors.to(device)
+        images = images.to(device)
         if cycle:
             images = G1(images)
         targets = [target.to(device) for target in targets]
         r = torch.range(0, len(targets) - 1).to(device)
         model.eval()
-        pred = model(images, image_sizes=images.sizes, r=r)
+        pred = model(images.tensors, image_sizes=images.sizes, r=r)
         
         
         model.train()
