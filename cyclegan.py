@@ -76,13 +76,14 @@ def valid(args, epoch, loader, dataset, m, G1, device, cycle=True):
         
         model.train()
         
-        (loss_dict, _) = model(images, targets=targets, r=r)
+        (loss_dict, _) = model(images.tensors, targets=targets, r=r)
         loss_cls = loss_dict['loss_cls'].mean()
         loss_box = loss_dict['loss_box'].mean()
         loss_center = loss_dict['loss_center'].mean()
         
         loss = loss_cls + loss_box + loss_center 
         losses.append(float(loss))
+        pbar.set_description(str(sum(losses) / len(losses)))
 
         pred = [p.to('cpu') for p in pred]
 
