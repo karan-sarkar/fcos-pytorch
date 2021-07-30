@@ -26,10 +26,15 @@ def parse_arguments():
           default="daytime",
           help="flag value for attribute to segment by",
     )
+    parser.add_argument(
+          "--limit",
+          type=int,
+          help="limit to number of examples",
+    )
     return parser.parse_args()
 
 
-def bdd2coco_detection(id_dict, labeled_images, fn, attribute, flag):
+def bdd2coco_detection(id_dict, labeled_images, fn, attribute, flag, limit):
 
     images = list()
     annotations = list()
@@ -37,6 +42,8 @@ def bdd2coco_detection(id_dict, labeled_images, fn, attribute, flag):
     counter = 0
     for i in tqdm(labeled_images):
         if i['attributes'][attribute] != flag:
+            continue
+        if limit > 0 and counter >= limit:
             continue
         counter += 1
         image = dict()
@@ -110,7 +117,7 @@ if __name__ == '__main__':
 
     out_fn = os.path.join(args.save_path,
                           args.flag + '_bdd100k_labels_images_det_coco_train.json')
-    bdd2coco_detection(attr_id_dict, train_labels, out_fn, args.attribute, args.flag)
+    bdd2coco_detection(attr_id_dict, train_labels, out_fn, args.attribute, args.flag, args.limit)
 
     print('Loading validation set...')
     # create BDD validation set detections in COCO format
@@ -121,4 +128,4 @@ if __name__ == '__main__':
 
     out_fn = os.path.join(args.save_path,
                           args.flag + '_bdd100k_labels_images_det_coco_val.json')
-    bdd2coco_detection(attr_id_dict, val_labels, out_fn, args.attribute, args.flag)
+    bdd2coco_detection(attr_id_dict, val_labels, out_fn, args.attribute, args.flag, args.limit)
