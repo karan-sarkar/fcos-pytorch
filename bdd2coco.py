@@ -107,7 +107,7 @@ if __name__ == '__main__':
     ]
 
     attr_id_dict = {i['name']: i['id'] for i in attr_dict['categories']}
-
+    limit_str = str(args.limit) if args.limit > 0 else ""
     # create BDD training set detections in COCO format
     print('Loading training set...')
     with open(os.path.join(args.label_dir,
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     print('Converting training set...')
 
     out_fn = os.path.join(args.save_path,
-                          args.flag + '_bdd100k_labels_images_det_coco_train.json')
+                          args.flag + limit_str + '_bdd100k_labels_images_det_coco_train.json')
     bdd2coco_detection(attr_id_dict, train_labels, out_fn, args.attribute, args.flag, args.limit)
 
     print('Loading validation set...')
@@ -127,5 +127,5 @@ if __name__ == '__main__':
     print('Converting validation set...')
 
     out_fn = os.path.join(args.save_path,
-                          args.flag + '_bdd100k_labels_images_det_coco_val.json')
+                          args.flag + limit_str + '_bdd100k_labels_images_det_coco_val.json')
     bdd2coco_detection(attr_id_dict, val_labels, out_fn, args.attribute, args.flag, args.limit)
