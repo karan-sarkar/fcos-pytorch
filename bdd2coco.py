@@ -2,7 +2,7 @@ import os
 import json
 import argparse
 from tqdm import tqdm
-
+import numpy
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='BDD100K to COCO format')
@@ -38,12 +38,14 @@ def bdd2coco_detection(id_dict, labeled_images, fn, attribute, flag, limit):
 
     images = list()
     annotations = list()
+    arr = np.arange(len(labeled_images))
+    np.random.shuffle(arr)
 
     counter = 0
     for i in tqdm(labeled_images):
         if i['attributes'][attribute] != flag:
             continue
-        if limit > 0 and counter >= limit:
+        if limit > 0 and arr[counter] >= limit:
             continue
         counter += 1
         image = dict()
