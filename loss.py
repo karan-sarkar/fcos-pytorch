@@ -250,7 +250,7 @@ class FCOSLoss(nn.Module):
 
         return torch.sqrt(centerness)
 
-    def forward(self, locations, cls_pred, box_pred, center_pred, targets):
+    def forward(self, locations, cls_pred, box_pred, center_pred, cls_pred2, box_pred2, center_pred2, targets):
         batch = cls_pred[0].shape[0]
         n_class = cls_pred[0].shape[1]
 
@@ -260,6 +260,10 @@ class FCOSLoss(nn.Module):
         box_flat = []
         center_flat = []
 
+        cls_flat2 = []
+        box_flat2 = []
+        center_flat2 = []
+
         labels_flat = []
         box_targets_flat = []
 
@@ -268,6 +272,11 @@ class FCOSLoss(nn.Module):
             box_flat.append(box_pred[i].permute(0, 2, 3, 1).reshape(-1, 4))
             center_flat.append(center_pred[i].permute(0, 2, 3, 1).reshape(-1))
 
+            cls_flat2.append(cls_pred2[i].permute(0, 2, 3, 1).reshape(-1, n_class))
+            box_flat2.append(box_pred2[i].permute(0, 2, 3, 1).reshape(-1, 4))
+            center_flat2.append(center_pred2[i].permute(0, 2, 3, 1).reshape(-1))
+
+
             labels_flat.append(labels[i].reshape(-1))
             box_targets_flat.append(box_targets[i].reshape(-1, 4))
 
@@ -275,15 +284,26 @@ class FCOSLoss(nn.Module):
         box_flat = torch.cat(box_flat, 0)
         center_flat = torch.cat(center_flat, 0)
 
+        cls_flat2 = torch.cat(cls_flat2, 0)
+        box_flat2 = torch.cat(box_flat2, 0)
+        center_flat2 = torch.cat(center_flat2, 0)
+        
+        discrep_loss = (cls_flat.detach() - cls_flat2).abs().mean() + (box_flat.detach() - box_flat2).abs().mean() + (center_flat.detach() - center_flat2).abs().mean()
+
+
         labels_flat = torch.cat(labels_flat, 0)
         box_targets_flat = torch.cat(box_targets_flat, 0)
 
         pos_id = torch.nonzero(labels_flat > 0).squeeze(1)
 
         cls_loss = self.cls_loss(cls_flat, labels_flat.int()) / (pos_id.numel() + batch)
-
+        cls_loss += self.cls_loss(cls_flat2, labels_flat.int()) / (pos_id.numel() + batch)
+        
         box_flat = box_flat[pos_id]
         center_flat = center_flat[pos_id]
+
+        box_flat2 = box_flat2[pos_id]
+        center_flat2 = center_flat2[pos_id]
 
         box_targets_flat = box_targets_flat[pos_id]
 
@@ -291,10 +311,12 @@ class FCOSLoss(nn.Module):
             center_targets = self.compute_centerness_targets(box_targets_flat)
 
             box_loss = self.box_loss(box_flat, box_targets_flat, center_targets)
+            box_loss += self.box_loss(box_flat2, box_targets_flat, center_targets)
             center_loss = self.center_loss(center_flat, center_targets)
+            center_loss += self.center_loss(center_flat2, center_targets)
 
         else:
-            box_loss = box_flat.sum()
-            center_loss = center_flat.sum()
+            box_loss = box_flat.sum() + box_flat2.sum()
+            center_loss = center_flat.sum() + center_flat2.sum()
 
-        return cls_loss, box_loss, center_loss
+        return cls_loss, box_loss, center_loss, discrep_loss

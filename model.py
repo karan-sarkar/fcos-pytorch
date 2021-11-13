@@ -167,6 +167,9 @@ class FCOS(nn.Module):
         self.head = FCOSHead(
             config.out_channel, config.n_class, config.n_conv, config.prior
         )
+        self.discriminator = FCOSHead(
+            config.out_channel, config.n_class, config.n_conv, config.prior
+        )
         self.postprocessor = FCOSPostprocessor(
             config.threshold,
             config.top_n,
@@ -200,17 +203,19 @@ class FCOS(nn.Module):
         features = self.backbone(input)
         features = self.fpn(features)
         cls_pred, box_pred, center_pred = self.head(features)
+        cls_pred2, box_pred2, center_pred2 = self.discriminator(features)
         # print(cls_pred, box_pred, center_pred)
         location = self.compute_location(features)
 
         if self.training:
-            loss_cls, loss_box, loss_center = self.loss(
-                location, cls_pred, box_pred, center_pred, targets
+            loss_cls, loss_box, loss_center, loss_discrep = self.loss(
+                location, cls_pred, box_pred, center_pred, cls_pred2, box_pred2, center_pred2, targets
             )
             losses = {
                 'loss_cls': loss_cls,
                 'loss_box': loss_box,
                 'loss_center': loss_center,
+                'loss_discrep': loss_discrep
             }
 
             return None, losses
