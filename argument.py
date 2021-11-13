@@ -11,7 +11,8 @@ def get_argparser():
     parser.add_argument('--epoch', type=int, default=24)
     parser.add_argument('--n_save_sample', type=int, default=5)
     parser.add_argument('--ckpt', type=str)
-    parser.add_argument('path', type=str)
+    parser.add_argument('--path', type=str)
+    parser.add_argument('--domain', type=str)
 
     return parser
 
@@ -35,10 +36,10 @@ def get_args():
     args.gamma = 2.0
     args.alpha = 0.25
     args.sizes = [[-1, 64], [64, 128], [128, 256], [256, 512], [512, 100000000]]
-    args.train_min_size_range = (640, 800)
-    args.train_max_size = 1333
-    args.test_min_size = 800
-    args.test_max_size = 1333
+    args.train_min_size_range = (1000, 1024)
+    args.train_max_size = 2048
+    args.test_min_size = 1024
+    args.test_max_size = 2048
     args.pixel_mean = [0.40789654, 0.44719302, 0.47026115]
     args.pixel_std = [0.28863828, 0.27408164, 0.27809835]
     args.size_divisible = 32
