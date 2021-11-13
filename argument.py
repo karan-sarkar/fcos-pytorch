@@ -13,6 +13,7 @@ def get_argparser():
     parser.add_argument('--ckpt', type=str)
     parser.add_argument('--path', type=str)
     parser.add_argument('--domain', type=str)
+    parser.add_argument('--target_domain', type=str)
 
     return parser
 
