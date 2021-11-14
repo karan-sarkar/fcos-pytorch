@@ -217,7 +217,7 @@ class FCOS(nn.Module):
                 'loss_center': loss_center,
                 'loss_discrep': loss_discrep
             }
-
+            
             return None, losses
 
         else:

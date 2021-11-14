@@ -37,13 +37,13 @@ def get_args():
     args.gamma = 2.0
     args.alpha = 0.25
     args.sizes = [[-1, 64], [64, 128], [128, 256], [256, 512], [512, 100000000]]
-    args.train_min_size_range = (1000, 1024)
+    args.train_min_size = 1024
     args.train_max_size = 2048
     args.test_min_size = 1024
     args.test_max_size = 2048
     args.pixel_mean = [0.40789654, 0.44719302, 0.47026115]
     args.pixel_std = [0.28863828, 0.27408164, 0.27809835]
-    args.size_divisible = 32
+    args.size_divisible = 0
     args.center_sample = True
     args.pos_radius = 1.5
     args.iou_loss_type = 'giou'

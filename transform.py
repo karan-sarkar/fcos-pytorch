@@ -27,15 +27,12 @@ class Compose:
 
 class Resize:
     def __init__(self, min_size, max_size):
-        if not isinstance(min_size, (list, tuple)):
-            min_size = (min_size,)
-
         self.min_size = min_size
         self.max_size = max_size
 
     def get_size(self, img_size):
         w, h = img_size
-        size = random.choice(self.min_size)
+        size = self.min_size
         max_size = self.max_size
 
         if max_size is not None:
@@ -96,16 +93,7 @@ class Normalize:
 
 def preset_transform(config, train=True):
     if train:
-        if config.train_min_size_range[0] == -1:
-            min_size = config.train_min_size
-
-        else:
-            min_size = list(
-                range(
-                    config.train_min_size_range[0], config.train_min_size_range[1] + 1
-                )
-            )
-
+        min_size = config.train_min_size
         max_size = config.train_max_size
         flip = 0.5
 
