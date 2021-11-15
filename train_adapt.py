@@ -6,13 +6,13 @@ from collections import Counter
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader, sampler
-import torchvision.models as models
+
 
 from tqdm import tqdm
 
 
 from argument import get_args
-from backbone import vovnet57, vovnet39
+from backbone import vovnet57, vovnet39, resnet50
 from dataset import COCODataset, collate_fn
 from model import FCOS
 from transform import preset_transform
@@ -258,7 +258,7 @@ if __name__ == '__main__':
 
 
 
-    backbone = models.resnet50(pretrained=True,if_include_top=False)
+    backbone = resnet50(pretrained=True,if_include_top=False)
     model = FCOS(args, backbone)
     model = model.to(device)
 
