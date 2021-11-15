@@ -201,7 +201,9 @@ class FCOS(nn.Module):
 
     def forward(self, input, image_sizes=None, targets=None):
         features = self.backbone(input)
-        features = self.fpn(features)
+        print([f.shape for f in features])
+        #features = torch.stack(features, 0)
+        #features = self.fpn(features)
         cls_pred, box_pred, center_pred = self.head(features)
         cls_pred2, box_pred2, center_pred2 = self.discriminator(features)
         # print(cls_pred, box_pred, center_pred)

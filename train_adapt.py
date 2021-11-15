@@ -6,6 +6,8 @@ from collections import Counter
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader, sampler
+import torchvision.models as models
+
 from tqdm import tqdm
 
 
@@ -256,7 +258,7 @@ if __name__ == '__main__':
 
 
 
-    backbone = vovnet39(pretrained=False)
+    backbone = models.resnet50(pretrained=True,if_include_top=False)
     model = FCOS(args, backbone)
     model = model.to(device)
 
