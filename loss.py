@@ -288,8 +288,7 @@ class FCOSLoss(nn.Module):
         box_flat2 = torch.cat(box_flat2, 0)
         center_flat2 = torch.cat(center_flat2, 0)
         
-        discrep_loss = (cls_flat.sigmoid().detach() - cls_flat2.sigmoid()).abs().mean() + 0.001 * (box_flat.detach() - box_flat2).abs().mean() + (center_flat.sigmoid().detach() - center_flat2.sigmoid()).abs().mean()
-
+        discrep_loss = (cls_flat.sigmoid().detach() - cls_flat2.sigmoid()).abs().sum(-1).mean()
 
         labels_flat = torch.cat(labels_flat, 0)
         box_targets_flat = torch.cat(box_targets_flat, 0)

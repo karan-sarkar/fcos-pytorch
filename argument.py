@@ -22,7 +22,7 @@ def get_args():
     parser = get_argparser()
     args = parser.parse_args()
 
-    args.feat_channels = [0, 0, 512, 768, 1024]
+    args.feat_channels = [512, 1024, 2048]
     args.out_channel = 256
     args.use_p5 = True
     args.n_class = 81
@@ -37,13 +37,13 @@ def get_args():
     args.gamma = 2.0
     args.alpha = 0.25
     args.sizes = [[-1, 64], [64, 128], [128, 256], [256, 512], [512, 100000000]]
-    args.train_min_size = 600
-    args.train_max_size = 1200
-    args.test_min_size = 600
-    args.test_max_size = 1200
+    args.train_min_size = 300
+    args.train_max_size = 600
+    args.test_min_size = 300
+    args.test_max_size = 600
     args.pixel_mean = [0.40789654, 0.44719302, 0.47026115]
     args.pixel_std = [0.28863828, 0.27408164, 0.27809835]
-    args.size_divisible = 16
+    args.size_divisible = 32
     args.center_sample = True
     args.pos_radius = 1.5
     args.iou_loss_type = 'giou'

@@ -258,8 +258,11 @@ if __name__ == '__main__':
 
 
 
-    backbone = resnet50(pretrained=True,if_include_top=False)
+    backbone = resnet50(pretrained=False,if_include_top=False)
     model = FCOS(args, backbone)
+    
+
+
     model = model.to(device)
 
     g_params = [p for n,p in model.named_parameters() if ('discriminator' not in n and 'head' not in n)]
@@ -291,6 +294,13 @@ if __name__ == '__main__':
         weight_decay=args.l2,
         nesterov=True,
     )
+
+    if args.ckpt is not None:
+        mapping = torch.load(args.ckpt)
+        model.load_state_dict(mapping['model'])
+        l_optimizer.load_state_dict(mapping['l_optim'])
+        g_optimizer.load_state_dict(mapping['g_optim'])
+        d_optimizer.load_state_dict(mapping['d_optim'])
 
     scheduler = optim.lr_scheduler.MultiStepLR(
         g_optimizer, milestones=[16, 22], gamma=0.1
