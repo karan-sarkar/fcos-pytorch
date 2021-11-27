@@ -26,6 +26,13 @@ from distributed import (
 )
 
 
+
+from torch.utils.tensorboard import SummaryWriter
+
+# default `log_dir` is "runs" - we'll be more specific here
+writer = SummaryWriter('runs')
+global_iter = 0
+
 def accumulate_predictions(predictions):
     all_predictions = all_gather(predictions)
 
@@ -45,6 +52,9 @@ def accumulate_predictions(predictions):
     predictions = [predictions[i] for i in ids]
 
     return predictions
+
+
+
 
 
 @torch.no_grad()
@@ -74,15 +84,13 @@ def valid(args, epoch, loader, dataset, model, device):
 
     preds = accumulate_predictions(preds)
 
-    if get_rank() != 0:
-        return
-
-    evaluate(dataset, preds)
+    res = evaluate(dataset, preds)
+    return res
 
 
 def train(args, epoch, loader, target_loader, model, g_optimizer, l_optimizer, d_optimizer, device):
     model.train()
-    
+    global global_iter
    
     memory = Counter()
 
@@ -102,7 +110,7 @@ def train(args, epoch, loader, target_loader, model, g_optimizer, l_optimizer, d
             images, targets, _ = next(iterator)
             target_images, target_targets, _ = next(target_iterator)
 
-        
+        global_iter += 1
         model.zero_grad()
 
         images = images.to(device)
@@ -183,7 +191,6 @@ def train(args, epoch, loader, target_loader, model, g_optimizer, l_optimizer, d
             loss += target_loss_discrep
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
-            l_optimizer.step()
             g_optimizer.step()
 
             del loss, target_loss_discrep, _
@@ -191,7 +198,11 @@ def train(args, epoch, loader, target_loader, model, g_optimizer, l_optimizer, d
         del images, targets, target_images, target_targets
 
 
-        
+        writer.add_scalar('loss/cls', loss_cls_item, global_iter)
+        writer.add_scalar('loss/box', loss_box_item, global_iter)
+        writer.add_scalar('loss/center', loss_center_item, global_iter)
+        writer.add_scalar('loss/discrep', loss_discrep_item, global_iter)
+
         pbar.set_description(
             (
                 f'epoch: {epoch + 1}; cls: {loss_cls_item:.4f}; '
@@ -249,6 +260,7 @@ if __name__ == '__main__':
         synchronize()
 
     device = 'cuda'
+    
 
     train_set = COCODataset(args.path, args.domain, 'train', preset_transform(args, train=True))
     valid_set = COCODataset(args.path, args.domain, 'val', preset_transform(args, train=False))
@@ -348,8 +360,11 @@ if __name__ == '__main__':
 
     for epoch in range(args.epoch):
         train(args, epoch, train_loader, target_train_loader, model, g_optimizer, l_optimizer, d_optimizer, device)
-        valid(args, epoch, valid_loader, valid_set, model, device)
-        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        source_res = valid(args, epoch, valid_loader, valid_set, model, device)
+        target_res = valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+
+        writer.add_scalar('metric/source/map', source_res.stats[1], global_iter)
+        writer.add_scalar('metric/target/map', target_res.stats[1], global_iter)
 
         scheduler.step()
 
