@@ -84,8 +84,10 @@ def valid(args, epoch, loader, dataset, model, device):
 
     preds = accumulate_predictions(preds)
 
-    res = evaluate(dataset, preds)
-    return res
+    if get_rank() != 0:
+        return
+
+    evaluate(dataset, preds)
 
 
 def train(args, epoch, loader, target_loader, model, g_optimizer, l_optimizer, d_optimizer, device):
@@ -192,6 +194,7 @@ def train(args, epoch, loader, target_loader, model, g_optimizer, l_optimizer, d
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 10)
             g_optimizer.step()
+            l_optimizer.step()
 
             del loss, target_loss_discrep, _
         
@@ -230,7 +233,9 @@ def train(args, epoch, loader, target_loader, model, g_optimizer, l_optimizer, d
                 values[(type(obj))].append(obj) 
         for mem in new_memory.keys():
             if memory[mem] != new_memory[mem]:
-                print(new_memory[mem] - memory[mem], mem)
+                print(new_memory[mem] - memory[mem], mem)o
+
+def
         del memory
         memory = new_memory
         del new_memory
@@ -360,11 +365,8 @@ if __name__ == '__main__':
 
     for epoch in range(args.epoch):
         train(args, epoch, train_loader, target_train_loader, model, g_optimizer, l_optimizer, d_optimizer, device)
-        source_res = valid(args, epoch, valid_loader, valid_set, model, device)
-        target_res = valid(args, epoch, target_valid_loader, target_valid_set, model, device)
-
-        writer.add_scalar('metric/source/map', source_res.stats[1], global_iter)
-        writer.add_scalar('metric/target/map', target_res.stats[1], global_iter)
+        valid(args, epoch, valid_loader, valid_set, model, device)
+        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
 
         scheduler.step()
 

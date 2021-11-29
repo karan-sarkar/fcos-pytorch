@@ -37,10 +37,10 @@ def get_args():
     args.gamma = 2.0
     args.alpha = 0.25
     args.sizes = [[-1, 64], [64, 128], [128, 256], [256, 512], [512, 100000000]]
-    args.train_min_size = 300
-    args.train_max_size = 600
-    args.test_min_size = 300
-    args.test_max_size = 600
+    args.train_min_size = 720
+    args.train_max_size = 1280
+    args.test_min_size = 720
+    args.test_max_size = 1280
     args.pixel_mean = [0.40789654, 0.44719302, 0.47026115]
     args.pixel_std = [0.28863828, 0.27408164, 0.27809835]
     args.size_divisible = 32
