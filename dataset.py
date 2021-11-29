@@ -28,7 +28,6 @@ class COCODataset(datasets.CocoDetection):
         super().__init__(root, annot)
 
         self.ids = sorted(self.ids)
-
         if split == 'train':
             ids = []
 
@@ -44,7 +43,6 @@ class COCODataset(datasets.CocoDetection):
         self.category2id = {v: i + 1 for i, v in enumerate(self.coco.getCatIds())}
         self.id2category = {v: k for k, v in self.category2id.items()}
         self.id2img = {k: v for k, v in enumerate(self.ids)}
-
         self.transform = transform
 
     def __getitem__(self, index):
