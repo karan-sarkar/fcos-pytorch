@@ -71,6 +71,7 @@ def make_coco_detection(predictions, dataset):
             continue
 
         img_meta = dataset.get_image_meta(id)
+        
         width = img_meta['width']
         height = img_meta['height']
         pred = pred.resize((width, height))
