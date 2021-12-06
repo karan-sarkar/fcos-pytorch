@@ -25,7 +25,7 @@ def get_args():
     args.feat_channels = [512, 1024, 2048]
     args.out_channel = 256
     args.use_p5 = True
-    args.n_class = 81
+    args.n_class = 11
     args.n_conv = 4
     args.prior = 0.01
     args.threshold = 0.05

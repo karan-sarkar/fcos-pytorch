@@ -235,7 +235,6 @@ def train(args, epoch, loader, target_loader, model, g_optimizer, l_optimizer, d
             if memory[mem] != new_memory[mem]:
                 print(new_memory[mem] - memory[mem], mem)o
 
-def
         del memory
         memory = new_memory
         del new_memory
@@ -364,9 +363,11 @@ if __name__ == '__main__':
 
 
     for epoch in range(args.epoch):
+        if epoch > 0:
+            valid(args, epoch, valid_loader, valid_set, model, device)
+            valid(args, epoch, target_valid_loader, target_valid_set, model, device)
         train(args, epoch, train_loader, target_train_loader, model, g_optimizer, l_optimizer, d_optimizer, device)
-        valid(args, epoch, valid_loader, valid_set, model, device)
-        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+
 
         scheduler.step()
 
