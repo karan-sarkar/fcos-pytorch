@@ -98,7 +98,7 @@ class EigenDetect(nn.Module):
         self.apply(freeze_bn)
     
     def forward(self, input, image_sizes=None, targets=None):
-        features = self.backbone(input)
+        features = self.backbone(input)[1:]
         #print([f.shape for f in features])
         #features = torch.stack(features, 0)
         features = self.fpn(features)

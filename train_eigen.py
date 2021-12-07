@@ -227,7 +227,7 @@ if __name__ == '__main__':
 
 
     optimizer = optim.SGD(
-        model.paramters(),
+        model.parameters(),
         lr=args.lr,
         momentum=0.9,
         weight_decay=args.l2,
@@ -293,7 +293,7 @@ if __name__ == '__main__':
 
         if get_rank() == 0 and epoch % 5 == 0:
             torch.save(
-                {'model': model.module.state_dict(), 'optim': optimizer.state_dict(),
-                f'checkpoint/adapt-epoch-{epoch + 1}.pt',
+                {'model': model.module.state_dict(), 'optim': optimizer.state_dict()},
+                f'checkpoint/adapt-epoch-{epoch + 1}.pt'
             )
 
