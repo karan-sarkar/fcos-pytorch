@@ -92,7 +92,7 @@ def valid(args, epoch, loader, dataset, model, device):
     return
 
 
-def train(args, epoch, loader, target_loader, model, g_optimizer, l_optimizer, d_optimizer, device):
+def train(args, epoch, loader, target_loader, model, optimizer, device):
     model.train()
     global global_iter
    
@@ -134,9 +134,7 @@ def train(args, epoch, loader, target_loader, model, g_optimizer, l_optimizer, d
 
         loss.backward()
         nn.utils.clip_grad_norm_(model.parameters(), 10)
-        g_optimizer.step()
-        d_optimizer.step()
-        l_optimizer.step()
+        optimizer.step()
 
         del loss, _
 
@@ -227,45 +225,23 @@ if __name__ == '__main__':
 
     model = model.to(device)
 
-    g_params = [p for n,p in model.named_parameters() if ('discriminator' not in n and 'head' not in n)]
-    l_params = [p for n,p in model.named_parameters() if 'head' in n]
-    d_params = [p for n,p in model.named_parameters() if 'discriminator' in n]
-    print(len(g_params), len(l_params), len(d_params))
 
-
-    g_optimizer = optim.SGD(
-        g_params,
+    optimizer = optim.SGD(
+        model.paramters(),
         lr=args.lr,
         momentum=0.9,
         weight_decay=args.l2,
         nesterov=True,
     )
 
-    l_optimizer = optim.SGD(
-        l_params,
-        lr=args.lr,
-        momentum=0.9,
-        weight_decay=args.l2,
-        nesterov=True,
-    )
-
-    d_optimizer = optim.SGD(
-        d_params,
-        lr=args.lr,
-        momentum=0.9,
-        weight_decay=args.l2,
-        nesterov=True,
-    )
 
     if args.ckpt is not None:
         mapping = torch.load(args.ckpt)
         model.load_state_dict(mapping['model'])
-        l_optimizer.load_state_dict(mapping['l_optim'])
-        g_optimizer.load_state_dict(mapping['g_optim'])
-        d_optimizer.load_state_dict(mapping['d_optim'])
+        optimizer.load_state_dict(mapping['optim'])
 
     scheduler = optim.lr_scheduler.MultiStepLR(
-        g_optimizer, milestones=[16, 22], gamma=0.1
+        optimizer, milestones=[16, 22], gamma=0.1
     )
 
     if args.distributed:
@@ -309,7 +285,7 @@ if __name__ == '__main__':
 
 
     for epoch in range(args.epoch):
-        train(args, epoch, train_loader, target_train_loader, model, g_optimizer, l_optimizer, d_optimizer, device)
+        train(args, epoch, train_loader, target_train_loader, model, optimizer, device)
         valid(args, epoch, valid_loader, valid_set, model, device)
         valid(args, epoch, target_valid_loader, target_valid_set, model, device)
 
@@ -317,8 +293,7 @@ if __name__ == '__main__':
 
         if get_rank() == 0 and epoch % 5 == 0:
             torch.save(
-                {'model': model.module.state_dict(), 'g_optim': g_optimizer.state_dict(),
-                'l_optim': l_optimizer.state_dict(), 'd_optim': d_optimizer.state_dict()},
+                {'model': model.module.state_dict(), 'optim': optimizer.state_dict(),
                 f'checkpoint/adapt-epoch-{epoch + 1}.pt',
             )
 
