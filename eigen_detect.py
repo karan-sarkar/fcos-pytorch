@@ -7,6 +7,13 @@ from torch.nn import functional as F
 from loss import FCOSLoss
 from postprocess import FCOSPostprocessor
 
+def init_conv_kaiming(module):
+    if isinstance(module, nn.Conv2d):
+        nn.init.kaiming_uniform_(module.weight, a=1)
+
+        if module.bias is not None:
+            nn.init.constant_(module.bias, 0)
+
 class FPN(nn.Module):
     def __init__(self, in_channels, out_channel, top_blocks=None):
         super().__init__()
