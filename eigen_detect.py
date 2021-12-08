@@ -4,6 +4,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from numpy import linalg as LA
+
 from loss import FCOSLoss
 from postprocess import FCOSPostprocessor
 
@@ -149,13 +151,17 @@ class EigenDetect(nn.Module):
             
             
             return None, losses
-        '''
+        
         else:
-            boxes = self.postprocessor(
-                location, cls_pred, box_pred, center_pred, image_sizes
-            )
+            w, v = LA.eig(matrix)
+            print(w.shape, v.shape)
+            print(w)
+            print('\n\n')
+            print(v)
+            
+            boxes = None
 
             return boxes, None
-        '''
+        
         
         
