@@ -83,7 +83,7 @@ def binary(x, bits):
     mask = mask.repeat(x.size(0), 1)
     y = x.unsqueeze(-1).repeat(1, mask.size(-1))
     #print(mask.shape, y.shape)
-    return y.bitwise_and(mask).ne(0).byte()
+    return 2*y.bitwise_and(mask).ne(0).float() - 1
 
 class EigenDetect(nn.Module):
     def __init__(self, config, backbone):
@@ -115,14 +115,15 @@ class EigenDetect(nn.Module):
         #print([f.shape for f in features])
         features = torch.cat([f.view(f.size(0), f.size(1), -1) for f in features], -1)
         #print(features.shape)
-        matrix = self.fc(features.view(features.size(0), -1).relu()).tanh()
+        matrix = (self.fc(features.view(features.size(0), -1).relu()) / 54).tanh() 
         matrix = matrix.view(matrix.size(0), 54, 54)
+        #print(matrix)
         
         #print([t.box.shape for t in targets])
         if self.training:
             boxes = [binary(t.box.int().view(-1), 11).float().view(-1, 4 * 11) for t in targets if t.box.numel() > 0]
             #print(boxes[0], boxes[0].shape)
-            labels = [F.one_hot(t.fields['labels'], self.config.n_class - 1) for t in targets if t.box.numel() > 0]
+            labels = [F.one_hot(t.fields['labels'] - 1, self.config.n_class - 1).float() for t in targets if t.box.numel() > 0]
             #print(labels[0], labels[0].shape)
             vectors = [torch.cat([b, l], -1) for b, l in zip(boxes, labels)]
             #print(vectors[0], vectors[0].shape)

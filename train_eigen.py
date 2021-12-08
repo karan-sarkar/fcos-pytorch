@@ -149,7 +149,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
         loss_reduced = reduce_loss_dict(loss_dict)
         loss_pos_item = loss_reduced['loss_pos'].mean().item()
         loss_neg_item = loss_reduced['loss_neg'].mean().item()
-        
+        total_loss = loss_pos_item + loss_neg_item
         del loss_dict, loss_reduced
         
         del images, targets, target_images, target_targets
@@ -157,6 +157,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
 
         writer.add_scalar('loss/pos', loss_pos_item, global_iter)
         writer.add_scalar('loss/neg', loss_neg_item, global_iter)
+        writer.add_scalar('loss/tot', total_loss, global_iter)
         
         pbar.set_description(
             (
@@ -293,8 +294,8 @@ if __name__ == '__main__':
 
     for epoch in range(args.epoch):
         train(args, epoch, train_loader, target_train_loader, model, optimizer, device)
-        valid(args, epoch, valid_loader, valid_set, model, device)
-        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        #valid(args, epoch, valid_loader, valid_set, model, device)
+        #valid(args, epoch, target_valid_loader, target_valid_set, model, device)
 
         scheduler.step()
 
