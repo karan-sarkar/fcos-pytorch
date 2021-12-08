@@ -77,6 +77,11 @@ class FPNTopP6P7(nn.Module):
         p7 = self.p7(F.relu(p6))
 
         return p6, p7
+    
+def binary(x, bits):
+    mask = 2**torch.arange(bits).to(x.device, x.dtype)
+    mask = mask.repeat(x.size(0), 1)
+    return x.bitwise_and(mask).ne(0).byte()
 
 class EigenDetect(nn.Module):
     def __init__(self, config, backbone):
@@ -87,6 +92,7 @@ class EigenDetect(nn.Module):
             config.feat_channels[-1], config.out_channel, use_p5=config.use_p5
         )
         self.fpn = FPN(config.feat_channels, config.out_channel, fpn_top)
+        self.config = config
     
     def train(self, mode=True):
         super().train(mode)
@@ -102,18 +108,20 @@ class EigenDetect(nn.Module):
         #print([f.shape for f in features])
         #features = torch.stack(features, 0)
         features = self.fpn(features)
-        print([f.shape for f in features])
-        '''
-        cls_pred, box_pred, center_pred = self.head(features)
-        cls_pred2, box_pred2, center_pred2 = self.discriminator(features)
+        #print([f.shape for f in features])
+        features = torch.cat([f.view(f.size(0), f.size(1), -1) for f in features], -1)
+        print(features.shape)
         
-        # print(cls_pred, box_pred, center_pred)
-        location = self.compute_location(features)
-
+        
         if self.training:
-            loss_cls, loss_box, loss_center, loss_discrep = self.loss(
-                location, cls_pred, box_pred, center_pred, cls_pred2, box_pred2, center_pred2, targets
-            )
+            boxes = [binary(t.box.int().view(-1), 10).float().view(-1, 4 * 10) for t in targets]
+            print(boxes[0], boxes[0].shape)
+            labels = [F.one_hot(t.fields['labels'], self.config.n_class - 1) for t in targets]
+            print(labels[0], labels[0].shape)
+            vectors = [torch.cat([b, l], -1) for b, l in zip(boxes, labels)]
+            print(vectors[0], vectors[0].shape)
+            return None
+        '''
             losses = {
                 'loss_cls': loss_cls,
                 'loss_box': loss_box,
