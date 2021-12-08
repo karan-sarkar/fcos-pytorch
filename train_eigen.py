@@ -77,8 +77,7 @@ def valid(args, epoch, loader, dataset, model, device):
         images = images.to(device)
         targets = [target.to(device) for target in targets]
 
-        pred, _ = model(images.tensors, images.sizes)
-
+        pred, _ = model(images.tensors, images.sizes, targets)
         pred = [p.to('cpu') for p in pred]
 
         preds.update({id: p for id, p in zip(ids, pred)})
@@ -294,8 +293,8 @@ if __name__ == '__main__':
 
     for epoch in range(args.epoch):
         train(args, epoch, train_loader, target_train_loader, model, optimizer, device)
-        #valid(args, epoch, valid_loader, valid_set, model, device)
-        #valid(args, epoch, target_valid_loader, target_valid_set, model, device)
+        valid(args, epoch, valid_loader, valid_set, model, device)
+        valid(args, epoch, target_valid_loader, target_valid_set, model, device)
 
         scheduler.step()
 

@@ -5,9 +5,11 @@ from torch import nn
 from torch.nn import functional as F
 
 from numpy import linalg as LA
+import numpy as np
 
 from loss import FCOSLoss
 from postprocess import FCOSPostprocessor
+from boxlist import BoxList
 
 def init_conv_kaiming(module):
     if isinstance(module, nn.Conv2d):
@@ -87,6 +89,16 @@ def binary(x, bits):
     #print(mask.shape, y.shape)
     return 2*y.bitwise_and(mask).ne(0).float() - 1
 
+def decimal(x, bits):
+     mask = 2**torch.arange(bits).to(x.device)
+     #print(torch.arange(bits))
+     #print(mask)
+     mask = mask.repeat(*x.shape[:-1], 1)
+     #print(mask, '\n\n')
+     #print(x.int() * mask)
+     return (x.int() * mask).sum(-1)
+
+
 class EigenDetect(nn.Module):
     def __init__(self, config, backbone):
         super().__init__()
@@ -153,13 +165,31 @@ class EigenDetect(nn.Module):
             return None, losses
         
         else:
-            w, v = LA.eig(matrix)
-            print(w.shape, v.shape)
-            print(w)
-            print('\n\n')
-            print(v)
-            
-            boxes = None
+            w, v = LA.eig(matrix.detach().cpu().numpy())
+            w = torch.Tensor(w.real).to(matrix.device)
+            v = torch.Tensor(v.real).to(matrix.device)
+            #print(w.sort(-1))
+            #print(v, '\n\n')
+
+            b = v[:, :44, :].transpose(-1, -2)
+            l = v[:, 44:, :].transpose(-1, -2)
+
+            b = decimal(b.ge(0).reshape(-1, 54, 4, 11), 11)
+            l = l.argmax(-1)
+
+            #print(b.shape, l.shape, w.shape)
+
+            boxes = []
+            for i in range(w.size(0)):
+                mybox = b[i][w[i] > 0]
+                mylabel = l[i][w[i] > 0]
+                myscores = w[i][w[i] > 0]
+                #print(mybox, mylabel)
+                #print(targets[i].box, targets[i].fields['labels'])
+                box = BoxList(mybox, image_sizes[i])
+                box.fields['labels'] = mylabel + 1
+                box.fields['scores'] = myscores
+                boxes.append(box)
 
             return boxes, None
         
