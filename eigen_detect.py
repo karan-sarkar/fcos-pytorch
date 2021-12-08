@@ -20,8 +20,8 @@ class FPN(nn.Module):
 
         self.inner_convs = nn.ModuleList()
         self.out_convs = nn.ModuleList()
-
-        for i, in_channel in enumerate(in_channels, 1):
+        #print(in_channels)
+        for i, in_channel in enumerate(in_channels[1:], 1):
             if in_channel == 0:
                 self.inner_convs.append(None)
                 self.out_convs.append(None)
@@ -108,7 +108,7 @@ class EigenDetect(nn.Module):
         self.apply(freeze_bn)
     
     def forward(self, input, image_sizes=None, targets=None):
-        features = self.backbone(input)[1:]
+        features = self.backbone(input)
         #print([f.shape for f in features])
         #features = torch.stack(features, 0)
         features = self.fpn(features)
@@ -118,29 +118,34 @@ class EigenDetect(nn.Module):
         matrix = self.fc(features.view(features.size(0), -1).relu()).tanh()
         matrix = matrix.view(matrix.size(0), 54, 54)
         
-        
+        #print([t.box.shape for t in targets])
         if self.training:
-            boxes = [binary(t.box.int().view(-1), 11).float().view(-1, 4 * 11) for t in targets]
+            boxes = [binary(t.box.int().view(-1), 11).float().view(-1, 4 * 11) for t in targets if t.box.numel() > 0]
             #print(boxes[0], boxes[0].shape)
-            labels = [F.one_hot(t.fields['labels'], self.config.n_class - 1) for t in targets]
+            labels = [F.one_hot(t.fields['labels'], self.config.n_class - 1) for t in targets if t.box.numel() > 0]
             #print(labels[0], labels[0].shape)
             vectors = [torch.cat([b, l], -1) for b, l in zip(boxes, labels)]
             #print(vectors[0], vectors[0].shape)
+            del boxes, labels
             
             temp = [torch.einsum('nm,vm->nv', matrix[i], vectors[i]) for i in range(len(vectors))]
-            pos = [torch.einsum('vn,nv->v', v, t) for v, t in zip(vectors, temp)]
+            pos = [torch.einsum('vn,nv->v', vectors[i], temp[i]) for i in range(len(vectors))]
             loss_pos = torch.stack([self.crit(p, torch.ones_like(p)) for p in pos]).mean()
+            del temp, pos
+
+            neg_vectors = vectors[::-1]
+            del vectors
             
-            neg_vectors = vectors.reverse()
-            
-            temp = [torch.einsum('nm,vm->nv', matrix[i], neg_vectors[i]) for i in range(len(neg_vectors))]
-            neg = [torch.einsum('vn,nv->v', v, t) for v, t in zip(neg_vectors, temp)]
+            temp2 = [torch.einsum('nm,vm->nv', matrix[i], neg_vectors[i]) for i in range(len(neg_vectors))]
+            neg = [torch.einsum('vn,nv->v', neg_vectors[i], temp2[i]) for i in range(len(neg_vectors))]
             loss_neg = torch.stack([self.crit(p, torch.zeros_like(p)) for p in neg]).mean()
-            
+            del temp2, neg, neg_vectors            
+
             losses = {
                 'loss_pos': loss_pos,
                 'loss_neg': loss_neg,
             }
+            
             
             return None, losses
         '''

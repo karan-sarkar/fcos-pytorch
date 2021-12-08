@@ -133,6 +133,13 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
 
 
         loss.backward()
+
+        for name, param in model.named_parameters():
+            if param.grad is None:
+                print(name)
+
+
+
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer.step()
 
@@ -158,7 +165,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
             )
         )
         
-        '''
+        '''       
         t = torch.cuda.get_device_properties(0).total_memory
         r = torch.cuda.memory_reserved(0)
         a = torch.cuda.memory_allocated(0)
@@ -249,7 +256,7 @@ if __name__ == '__main__':
             model,
             device_ids=[args.local_rank],
             output_device=args.local_rank,
-            broadcast_buffers=False,
+            broadcast_buffers=False
         )
 
     train_loader = DataLoader(
