@@ -131,14 +131,11 @@ class EigenDetect(nn.Module):
             pos = [torch.einsum('vn,nv->v', v, t) for v, t in zip(vectors, temp)]
             loss_pos = torch.stack([self.crit(p, torch.ones_like(p)) for p in pos]).mean()
             
-            neg_boxes = torch.randint(1, (32, 44)).to(loss_pos.device)
-            neg_labels = F.one_hot(torch.randint(self.config.n_class - 1, (32,)), self.config.n_class - 1).to(loss_pos.device)
-            neg_vectors = torch.cat([neg_boxes, neg_labels], -1)
+            neg_vectors = vectors.reverse()
             
-            temp2 = torch.einsum('bnm,vm->bnv', matrix, neg_vectors)
-            neg = torch.einsum('vn,bnv->bv', neg_vectors,temp2)
-            loss_neg = self.crit(neg, torch.zeros_like(neg))
-            
+            temp = [torch.einsum('nm,vm->nv', matrix[i], neg_vectors[i]) for i in range(len(neg_vectors))]
+            neg = [torch.einsum('vn,nv->v', v, t) for v, t in zip(neg_vectors, temp)]
+            loss_neg = torch.stack([self.crit(p, torch.zeros_like(p)) for p in neg]).mean()
             
             losses = {
                 'loss_pos': loss_pos,
