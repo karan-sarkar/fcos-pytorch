@@ -81,7 +81,9 @@ class FPNTopP6P7(nn.Module):
 def binary(x, bits):
     mask = 2**torch.arange(bits).to(x.device, x.dtype)
     mask = mask.repeat(x.size(0), 1)
-    return x.bitwise_and(mask).ne(0).byte()
+    y = x.unsqueeze(-1).repeat(1, mask.size(-1))
+    print(mask.shape, y.shape)
+    return y.bitwise_and(mask).ne(0).byte()
 
 class EigenDetect(nn.Module):
     def __init__(self, config, backbone):
@@ -114,7 +116,7 @@ class EigenDetect(nn.Module):
         
         
         if self.training:
-            boxes = [binary(t.box.int().view(-1), 10).float().view(-1, 4 * 10) for t in targets]
+            boxes = [binary(t.box.int().view(-1), 11).float().view(-1, 4 * 11) for t in targets]
             print(boxes[0], boxes[0].shape)
             labels = [F.one_hot(t.fields['labels'], self.config.n_class - 1) for t in targets]
             print(labels[0], labels[0].shape)
