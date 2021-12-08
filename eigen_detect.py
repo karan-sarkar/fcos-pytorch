@@ -96,7 +96,7 @@ class EigenDetect(nn.Module):
         self.fpn = FPN(config.feat_channels, config.out_channel, fpn_top)
         self.fc = nn.Linear(config.out_channel * 5033, 54 * 54) 
         self.config = config
-        self.crit = nn.BCELossWithLogits()
+        self.crit = nn.BCEWithLogitsLoss()
     
     def train(self, mode=True):
         super().train(mode)
@@ -115,7 +115,7 @@ class EigenDetect(nn.Module):
         #print([f.shape for f in features])
         features = torch.cat([f.view(f.size(0), f.size(1), -1) for f in features], -1)
         #print(features.shape)
-        matrix = self.fc(features.view(features.size(0).relu(), -1)).tanh()
+        matrix = self.fc(features.view(features.size(0), -1).relu()).tanh()
         matrix = matrix.view(matrix.size(0), 54, 54)
         
         
@@ -129,10 +129,10 @@ class EigenDetect(nn.Module):
             
             temp = [torch.einsum('nm,vm->nv', matrix[i], vectors[i]) for i in range(len(vectors))]
             pos = [torch.einsum('vn,nv->v', v, t) for v, t in zip(vectors, temp)]
-            loss_pos = torch.cat([self.crit(p, torch.ones_like(p)) for p in pos]).mean()
+            loss_pos = torch.stack([self.crit(p, torch.ones_like(p)) for p in pos]).mean()
             
             neg_boxes = torch.randint(1, (32, 44)).to(loss_pos.device)
-            neg_labels = F.one_hot(torch.randint(self.config.n_class - 1, (32)), self.config.n_class - 1).to(loss_pos.device)
+            neg_labels = F.one_hot(torch.randint(self.config.n_class - 1, (32,)), self.config.n_class - 1).to(loss_pos.device)
             neg_vectors = torch.cat([neg_boxes, neg_labels], -1)
             
             temp2 = torch.einsum('bnm,vm->bnv', matrix, neg_vectors)
@@ -146,7 +146,7 @@ class EigenDetect(nn.Module):
             }
             
             return None, losses
-
+        '''
         else:
             boxes = self.postprocessor(
                 location, cls_pred, box_pred, center_pred, image_sizes
