@@ -82,7 +82,7 @@ def binary(x, bits):
     mask = 2**torch.arange(bits).to(x.device, x.dtype)
     mask = mask.repeat(x.size(0), 1)
     y = x.unsqueeze(-1).repeat(1, mask.size(-1))
-    print(mask.shape, y.shape)
+    #print(mask.shape, y.shape)
     return y.bitwise_and(mask).ne(0).byte()
 
 class EigenDetect(nn.Module):
@@ -94,7 +94,9 @@ class EigenDetect(nn.Module):
             config.feat_channels[-1], config.out_channel, use_p5=config.use_p5
         )
         self.fpn = FPN(config.feat_channels, config.out_channel, fpn_top)
+        self.fc = nn.Linear(config.out_channel * 5033, 54 * 54) 
         self.config = config
+        self.crit = nn.BCELossWithLogits()
     
     def train(self, mode=True):
         super().train(mode)
@@ -112,23 +114,35 @@ class EigenDetect(nn.Module):
         features = self.fpn(features)
         #print([f.shape for f in features])
         features = torch.cat([f.view(f.size(0), f.size(1), -1) for f in features], -1)
-        print(features.shape)
+        #print(features.shape)
+        matrix = self.fc(features.view(features.size(0).relu(), -1)).tanh()
+        matrix = matrix.view(matrix.size(0), 54, 54)
         
         
         if self.training:
             boxes = [binary(t.box.int().view(-1), 11).float().view(-1, 4 * 11) for t in targets]
-            print(boxes[0], boxes[0].shape)
+            #print(boxes[0], boxes[0].shape)
             labels = [F.one_hot(t.fields['labels'], self.config.n_class - 1) for t in targets]
-            print(labels[0], labels[0].shape)
+            #print(labels[0], labels[0].shape)
             vectors = [torch.cat([b, l], -1) for b, l in zip(boxes, labels)]
-            print(vectors[0], vectors[0].shape)
-            return None
-        '''
+            #print(vectors[0], vectors[0].shape)
+            
+            temp = [torch.einsum('nm,vm->nv', matrix[i], vectors[i]) for i in range(len(vectors))]
+            pos = [torch.einsum('vn,nv->v', v, t) for v, t in zip(vectors, temp)]
+            loss_pos = torch.cat([self.crit(p, torch.ones_like(p)) for p in pos]).mean()
+            
+            neg_boxes = torch.randint(1, (32, 44)).to(loss_pos.device)
+            neg_labels = F.one_hot(torch.randint(self.config.n_class - 1, (32)), self.config.n_class - 1).to(loss_pos.device)
+            neg_vectors = torch.cat([neg_boxes, neg_labels], -1)
+            
+            temp2 = torch.einsum('bnm,vm->bnv', matrix, neg_vectors)
+            neg = torch.einsum('vn,bnv->bv', neg_vectors,temp2)
+            loss_neg = self.crit(neg, torch.zeros_like(neg))
+            
+            
             losses = {
-                'loss_cls': loss_cls,
-                'loss_box': loss_box,
-                'loss_center': loss_center,
-                'loss_discrep': loss_discrep
+                'loss_pos': loss_pos,
+                'loss_neg': loss_neg,
             }
             
             return None, losses
