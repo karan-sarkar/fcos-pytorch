@@ -108,7 +108,9 @@ class EigenDetect(nn.Module):
             config.feat_channels[-1], config.out_channel, use_p5=config.use_p5
         )
         self.fpn = FPN(config.feat_channels, config.out_channel, fpn_top)
-        self.fc = nn.Linear(config.out_channel * 5033, 2 * 54 * 54) 
+        self.fc1 = nn.Linear(config.out_channel * 5033, 4000) 
+        self.fc2 = nn.Linear(4000, 2000)
+        self.fc3 = nn.Linear(2000, 2 * 54 * 54)
         self.config = config
         self.crit = nn.MSELoss()
     
@@ -129,10 +131,12 @@ class EigenDetect(nn.Module):
         #print([f.shape for f in features])
         features = torch.cat([f.view(f.size(0), f.size(1), -1) for f in features], -1)
         #print(features.shape)
-        matrix = (self.fc(features.view(features.size(0), -1).relu()) / (2 * 54)).tanh() 
+        matrix = (self.fc1(features.view(features.size(0), -1).relu()))
+        matrix = self.fc2(matrix.relu())
+        matrix = self.fc3(matrix.relu())
         matrix = matrix.view(matrix.size(0), 2, 54, 54)
         #print(matrix)
-        matrix = torch.einsum('bncd->bnde->bnce', matrix, matrix)
+        matrix = torch.einsum('bncd,bnde->bnce', matrix, matrix)
         
         #print([t.box.shape for t in targets])
         if self.training:
@@ -140,23 +144,26 @@ class EigenDetect(nn.Module):
             #print(boxes[0], boxes[0].shape)
             labels = [F.one_hot(t.fields['labels'] - 1, self.config.n_class - 1).float() for t in targets if t.box.numel() > 0]
             #print(labels[0], labels[0].shape)
-            vectors = [torch.cat([b, l], -1) for b, l in zip(boxes, labels)]
+            vectors = [torch.cat([b, l], -1)[:54] for b, l in zip(boxes, labels)]
             #print(vectors[0], vectors[0].shape)
             del boxes, labels
             
-            svd = [torch.linalg.svd(m, full_matrices=False) for m in vectors]
+            svd = [LA.svd(m, full_matrices=False) for m in vectors]
             
             d = matrix.device
-            svd = [torch.cat([u, torch.zeros(u.size(0), vh.size(0) - u.size(0)).to(d)], 1), torch.cat([s, torch.zeros(vh.size(0) - s.size(0), s.size(0)).to(d)], 0), v for u, s, v in svd]
-            U, P = zip(*[u @ vh, vh.transpose() @ s @ v for u, s, vh in svd])
-            print(vectors[0], '\n\n\n')
-            print(U[0] @ P[0])
-            P = torch.stack(p, 0)
+            #print([(u.shape, s.shape, vh.shape) for u, s, vh in svd])
+            svd = [(torch.cat([u, torch.zeros(u.size(0), vh.size(0) - u.size(0)).to(d)], 1), torch.cat([torch.diag(s), torch.zeros(vh.size(0) - s.size(0), s.size(0)).to(d)], 0), vh) for (u, s, vh) in svd]
+            U, P = zip(*[(u @ vh, vh.transpose(0, 1) @ s @ vh) for u, s, vh in svd])
+            #print(vectors[0], '\n\n\n')
+            #print(U[0] @ P[0])
+            P = torch.stack(P, 0)
             
             loss_herm = self.crit(matrix[:, 0], P)
-            D = [U[i] @ matrix[i, 1] @ U[i].transpose() for i in range(len(U))]
-            loss_unit = torch.stack([self.crit(D, torch.zeros_like(D)) / torch.trace(D @ D) for d in D], 0).mean()
-
+            
+            D = [U[i] @ matrix[i, 1] @ U[i].transpose(0, 1) for i in range(len(U))]
+            loss_unit = torch.stack([self.crit(d, torch.zeros_like(d)) / torch.diag(d).square().mean() for d in D], 0).mean()
+            #print(D[0])
+            #print(matrix[0, 0, 0, 0], P[0, 0, 0])
             losses = {
                 'loss_pos': loss_herm,
                 'loss_neg': loss_unit,
@@ -166,18 +173,21 @@ class EigenDetect(nn.Module):
             return None, losses
         
         else:
+            #print(matrix.shape)
             P = matrix[:, 0]
             A = matrix[:, 1]
+            #print(P.shape, A.shape)
+
             
             
-            w, v = LA.eigh(A.detach().cpu().numpy())
-            w = w.transpose() @ P
+            w, v = LA.eigh(A)
+            v = v.transpose(-1, -2) @ P
             
             #print(w.sort(-1))
             #print(v, '\n\n')
 
-            b = v[:, :44, :].transpose(-1, -2)
-            l = v[:, 44:, :].transpose(-1, -2)
+            b = v[:, :, :44]
+            l = v[:, :, 44:]
 
             b = decimal(b.ge(0).reshape(-1, 54, 4, 11), 11)
             l = l.argmax(-1)
