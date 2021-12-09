@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from numpy import linalg as LA
+from torch import linalg as LA
 import numpy as np
 
 from loss import FCOSLoss
@@ -108,9 +108,9 @@ class EigenDetect(nn.Module):
             config.feat_channels[-1], config.out_channel, use_p5=config.use_p5
         )
         self.fpn = FPN(config.feat_channels, config.out_channel, fpn_top)
-        self.fc = nn.Linear(config.out_channel * 5033, 54 * 54) 
+        self.fc = nn.Linear(config.out_channel * 5033, 2 * 54 * 54) 
         self.config = config
-        self.crit = nn.BCEWithLogitsLoss()
+        self.crit = nn.MSELoss()
     
     def train(self, mode=True):
         super().train(mode)
@@ -129,9 +129,10 @@ class EigenDetect(nn.Module):
         #print([f.shape for f in features])
         features = torch.cat([f.view(f.size(0), f.size(1), -1) for f in features], -1)
         #print(features.shape)
-        matrix = (self.fc(features.view(features.size(0), -1).relu()) / 54).tanh() 
-        matrix = matrix.view(matrix.size(0), 54, 54)
+        matrix = (self.fc(features.view(features.size(0), -1).relu()) / (2 * 54)).tanh() 
+        matrix = matrix.view(matrix.size(0), 2, 54, 54)
         #print(matrix)
+        matrix = torch.einsum('bncd->bnde->bnce', matrix, matrix)
         
         #print([t.box.shape for t in targets])
         if self.training:
@@ -143,31 +144,35 @@ class EigenDetect(nn.Module):
             #print(vectors[0], vectors[0].shape)
             del boxes, labels
             
-            temp = [torch.einsum('nm,vm->nv', matrix[i], vectors[i]) for i in range(len(vectors))]
-            pos = [torch.einsum('vn,nv->v', vectors[i], temp[i]) for i in range(len(vectors))]
-            loss_pos = torch.stack([self.crit(p, torch.ones_like(p)) for p in pos]).mean()
-            del temp, pos
-
-            neg_vectors = vectors[::-1]
-            del vectors
+            svd = [torch.linalg.svd(m, full_matrices=False) for m in vectors]
             
-            temp2 = [torch.einsum('nm,vm->nv', matrix[i], neg_vectors[i]) for i in range(len(neg_vectors))]
-            neg = [torch.einsum('vn,nv->v', neg_vectors[i], temp2[i]) for i in range(len(neg_vectors))]
-            loss_neg = torch.stack([self.crit(p, torch.zeros_like(p)) for p in neg]).mean()
-            del temp2, neg, neg_vectors            
+            d = matrix.device
+            svd = [torch.cat([u, torch.zeros(u.size(0), vh.size(0) - u.size(0)).to(d)], 1), torch.cat([s, torch.zeros(vh.size(0) - s.size(0), s.size(0)).to(d)], 0), v for u, s, v in svd]
+            U, P = zip(*[u @ vh, vh.transpose() @ s @ v for u, s, vh in svd])
+            print(vectors[0], '\n\n\n')
+            print(U[0] @ P[0])
+            P = torch.stack(p, 0)
+            
+            loss_herm = self.crit(matrix[:, 0], P)
+            D = [U[i] @ matrix[i, 1] @ U[i].transpose() for i in range(len(U))]
+            loss_unit = torch.stack([self.crit(D, torch.zeros_like(D)) / torch.trace(D @ D) for d in D], 0).mean()
 
             losses = {
-                'loss_pos': loss_pos,
-                'loss_neg': loss_neg,
+                'loss_pos': loss_herm,
+                'loss_neg': loss_unit,
             }
             
             
             return None, losses
         
         else:
-            w, v = LA.eig(matrix.detach().cpu().numpy())
-            w = torch.Tensor(w.real).to(matrix.device)
-            v = torch.Tensor(v.real).to(matrix.device)
+            P = matrix[:, 0]
+            A = matrix[:, 1]
+            
+            
+            w, v = LA.eigh(A.detach().cpu().numpy())
+            w = w.transpose() @ P
+            
             #print(w.sort(-1))
             #print(v, '\n\n')
 
