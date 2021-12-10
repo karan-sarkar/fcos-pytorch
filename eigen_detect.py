@@ -99,8 +99,10 @@ def decimal(x, bits):
      return (x.int() * mask).sum(-1)
     
 def pad(x, sh):
-    val = torch.zeros(sh)
-    val[:x.size(0), :x.size(1)] = x
+    #print(x.shape, sh)
+    val = torch.zeros(sh).to(x.device)
+    val[:min(x.size(0), sh[0]), :min(x.size(1), sh[1])] = x
+    #print(val.shape)
     return val
 
 
@@ -115,9 +117,10 @@ class EigenDetect(nn.Module):
         self.fpn = FPN(config.feat_channels, config.out_channel, fpn_top)
         self.fc1 = nn.Linear(config.out_channel * 5033, 4000) 
         self.fc2 = nn.Linear(4000, 2000)
-        self.size = config.n_class + 3
+        self.size = config.n_class -1 + 1 * 4
+        self.limit = self.size
         self.fc3 = nn.Linear(2000, self.size * self.size)
-        self.fc4 = nn.Linear(2000, 64 * 64)
+        self.fc4 = nn.Linear(2000, self.limit * self.limit)
         self.config = config
         self.crit = nn.MSELoss()
     
@@ -142,35 +145,37 @@ class EigenDetect(nn.Module):
         matrix = self.fc2(matrix.relu())
         A, B = self.fc3(matrix.relu()), self.fc4(matrix.relu())
         A = A.view(A.size(0), self.size, self.size)
-        B = B.view(B.size(0), 64, 64)
+        B = B.view(B.size(0), self.limit, self.limit)
         #print(matrix)
         A = torch.einsum('bcd,bde->bce', A, A)
         B = torch.einsum('bcd,bde->bce', B, B)
         
         #print([t.box.shape for t in targets])
         if self.training:
-            boxes = [t.box / self.config.train_max_size for t in targets if t.box.numel() > 0]
+            boxes = [t.box/200 for t in targets if t.box.numel() > 0]
             #print(boxes[0], boxes[0].shape)
-            labels = [F.one_hot(t.fields['labels'] - 1, self.config.n_class - 1).float() for t in targets if t.box.numel() > 0]
+            labels = [F.one_hot(t.fields['labels'] - 1, self.config.n_class - 1).float()*3 for t in targets if t.box.numel() > 0]
             #print(labels[0], labels[0].shape)
-            vectors = [torch.cat([b, l], -1) for b, l in zip(boxes, labels)]
-            #print(vectors[0], vectors[0].shape)
+            vectors = [torch.cat([b, l], -1)[:self.limit] for b, l in zip(boxes, labels)]
+            #print(vectors[0], vectors[.shape)
             del boxes, labels
             
             svd = [LA.svd(m, full_matrices=False) for m in vectors]
             
             d = A.device
             #print([(u.shape, s.shape, vh.shape) for u, s, vh in svd])
-            max_dim = max(u.size(0), v.size(0))
-            svd = [(pad(u, (u.size(0), max_dim)), pad(torch.diag(s), (max_dim, max_dim)), pad(vh, (max_dim, vh.size(1)))) for (u, s, vh) in svd]
-            U, P = zip(*[(u @ vh, vh.transpose(0, 1) @ s @ vh) for u, s, vh in svd])
-            #print(vectors[0], '\n\n\n')
+            #svd = [(u.to(d), s.to(d), vh.to(d), max(u.size(0), vh.size(0))) for u,s,vh in svd]
+            svd = [(pad(u, (self.limit, self.limit)), pad(torch.diag(s), (self.limit, self.size)), pad(vh, (self.size, self.size))) for (u, s, vh) in svd]
+            #print([(vh.shape) for u, s, vh in svd])
+            U, P = zip(*[(u @ pad(vh, (self.limit, self.size)), vh.transpose(0, 1) @ s @ vh) for u, s, vh in svd])
+            #print(vectors[0], '\n\n')
             #print(U[0] @ P[0])
             P = torch.stack(P, 0)
             
             loss_herm = self.crit(A, P)
             
-            D = [U[i] @ B[i] @ U[i].transpose(0, 1) for i in range(len(U))]
+            D = [U[i] @ B[i] @ U[i].transpose(0,1) for i in range(len(U))]
+            #print(D[0])
             loss_unit = torch.stack([self.crit(d, torch.zeros_like(d)) / torch.diag(d).square().mean() for d in D], 0).mean()
             #print(D[0])
             #print(matrix[0, 0, 0, 0], P[0, 0, 0])
@@ -188,18 +193,18 @@ class EigenDetect(nn.Module):
             
             
             w, v = LA.eigh(B)
-            v = v.transpose(-1, -2) @ A
-            print(v)
+            v = torch.einsum('bcd,bde->bce', v.transpose(-1, 2), A).abs()
+            #print(v)           
             
             #print(w.sort(-1))
             #print(v, '\n\n')
 
-            b = v[:, :, :4] * self.config.train_max_size
-            l = v[:, :, 4:]
+            b = v[:, :, :4] * 200
+            l = v[:, :, :(self.config.n_class - 1)]
 
             l = l.argmax(-1)
-
-            #print(b.shape, l.shape, w.shape)
+            print(b.shape, l.shape)
+            print(b[0], l[0]+1)           #print(b.shape, l.shape, w.shape)
 
             boxes = []
             for i in range(w.size(0)):

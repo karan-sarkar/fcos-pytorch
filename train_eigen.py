@@ -76,7 +76,7 @@ def valid(args, epoch, loader, dataset, model, device):
 
         images = images.to(device)
         targets = [target.to(device) for target in targets]
-
+        print((targets[0].box, targets[0].fields['labels']))
         pred, _ = model(images.tensors, images.sizes, targets)
         pred = [p.to('cpu') for p in pred]
 
@@ -298,9 +298,9 @@ if __name__ == '__main__':
 
         scheduler.step()
 
-        if get_rank() == 0 and epoch % 5 == 0:
+        if get_rank() == 0:
             torch.save(
                 {'model': model.module.state_dict(), 'optim': optimizer.state_dict()},
-                f'checkpoint/adapt-epoch-{epoch + 1}.pt'
+                f'checkpoint/adapt-epoch-{epoch//5 + 1}.pt'
             )
 
