@@ -44,12 +44,12 @@ class EigenDetect(nn.Module):
         self.backbone = torch.nn.Sequential(*(list(backbone.children())[:-1]))
         
         
-        self.fc1 = nn.Linear(config.out_channel * 5033, 4000) 
-        self.fc2 = nn.Linear(4000, 2000)
+        self.fc1 = nn.Linear(2048, 4096) 
+        self.fc2 = nn.Linear(4096, 2048)
         self.size = config.n_class -1 + 1 * 4
         self.limit = self.size
-        self.fc3 = nn.Linear(2000, self.size * self.size)
-        self.fc4 = nn.Linear(2000, self.limit * self.limit)
+        self.fc3 = nn.Linear(2048, self.size * self.size)
+        self.fc4 = nn.Linear(2048, self.limit * self.limit)
         self.config = config
         self.crit = nn.MSELoss()
     
@@ -64,7 +64,8 @@ class EigenDetect(nn.Module):
     
     def forward(self, input, image_sizes=None, targets=None):
         features = self.backbone(input)
-        print(features.shape)
+        #print(features.shape)
+        features = features.view(features.size(0), -1)
         matrix = (self.fc1(features.relu()))
         matrix = self.fc2(matrix.relu())
         A, B = self.fc3(matrix.relu()), self.fc4(matrix.relu())
@@ -76,7 +77,7 @@ class EigenDetect(nn.Module):
         
         #print([t.box.shape for t in targets])
         if self.training:
-            boxes = [t.box/200 for t in targets if t.box.numel() > 0]
+            boxes = [t.box/500 for t in targets if t.box.numel() > 0]
             #print(boxes[0], boxes[0].shape)
             labels = [F.one_hot(t.fields['labels'] - 1, self.config.n_class - 1).float()*3 for t in targets if t.box.numel() > 0]
             #print(labels[0], labels[0].shape)
@@ -123,7 +124,7 @@ class EigenDetect(nn.Module):
             #print(w.sort(-1))
             #print(v, '\n\n')
 
-            b = v[:, :, :4] * 200
+            b = v[:, :, :4] * 500
             l = v[:, :, :(self.config.n_class - 1)]
 
             l = l.argmax(-1)
