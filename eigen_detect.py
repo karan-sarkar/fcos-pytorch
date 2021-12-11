@@ -43,11 +43,17 @@ class EigenDetect(nn.Module):
         
         self.backbone = torch.nn.Sequential(*(list(backbone.children())[:-1]))
         
-        
         self.fc1 = nn.Linear(2048, 4096) 
         self.fc2 = nn.Linear(4096, 2048)
         self.size = config.n_class -1 + 1 * 4
-        self.limit = self.size
+        self.limit = 64
+        
+        self.enc1 = nn.Linear(self.size, self.limit)
+        self.enc2 = nn.Linear(self.limit, self.limit)
+        self.dec1 = nn.Linear(self.limit, self.limit)
+        self.dec2 = nn.Linear(self.limit, self.size)
+        
+        
         self.fc3 = nn.Linear(2048, self.size * self.size)
         self.fc4 = nn.Linear(2048, self.limit * self.limit)
         self.config = config
@@ -82,6 +88,11 @@ class EigenDetect(nn.Module):
             labels = [F.one_hot(t.fields['labels'] - 1, self.config.n_class - 1).float()*3 for t in targets if t.box.numel() > 0]
             #print(labels[0], labels[0].shape)
             vectors = [torch.cat([b, l], -1)[:self.limit] for b, l in zip(boxes, labels)]
+            old_vectors = vectors
+            vectors = [self.enc2(self.enc1(v).relu()) for v in vectors]
+            rec_vectors = [self.dec2(self.dec1(v.relu()).relu()) for v in vectors]
+            loss_rec = torch.stack([self.crit(o,r) for o, r in zip(old_vectors, rec_vectors)], 0).mean()
+            
             #print(vectors[0], vectors[.shape)
             del boxes, labels
             
@@ -90,9 +101,9 @@ class EigenDetect(nn.Module):
             d = A.device
             #print([(u.shape, s.shape, vh.shape) for u, s, vh in svd])
             #svd = [(u.to(d), s.to(d), vh.to(d), max(u.size(0), vh.size(0))) for u,s,vh in svd]
-            svd = [(pad(u, (self.limit, self.limit)), pad(torch.diag(s), (self.limit, self.size)), pad(vh, (self.size, self.size))) for (u, s, vh) in svd]
+            svd = [(pad(u, (self.limit, self.limit)), pad(torch.diag(s), (self.limit, self.limit)), pad(vh, (self.limit, self.limit))) for (u, s, vh) in svd]
             #print([(vh.shape) for u, s, vh in svd])
-            U, P = zip(*[(u @ pad(vh, (self.limit, self.size)), vh.transpose(0, 1) @ s @ vh) for u, s, vh in svd])
+            U, P = zip(*[(u @ pad(vh, (self.limit, self.limit)), vh.transpose(0, 1) @ s @ vh) for u, s, vh in svd])
             #print(vectors[0], '\n\n')
             #print(U[0] @ P[0])
             P = torch.stack(P, 0)
@@ -105,8 +116,9 @@ class EigenDetect(nn.Module):
             #print(D[0])
             #print(matrix[0, 0, 0, 0], P[0, 0, 0])
             losses = {
-                'loss_pos': loss_herm,
-                'loss_neg': loss_unit,
+                'loss_herm': loss_herm,
+                'loss_unit': loss_unit,
+                'loss_rec': loss_rec
             }
             
             
@@ -119,6 +131,9 @@ class EigenDetect(nn.Module):
             
             w, v = LA.eigh(B)
             v = torch.einsum('bcd,bde->bce', v.transpose(-1, 2), A).abs()
+            v = v.view(-1, self.limit)
+            v = self.dec2(self.dec1(v.relu()).relu())
+            v = v.view(-1, self.limit, self.limit)
             #print(v)           
             
             #print(w.sort(-1))
