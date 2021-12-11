@@ -124,12 +124,7 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
 
 
         _, loss_dict = model(images.tensors, targets=targets)
-        loss_pos = loss_dict['loss_pos'].mean()
-        loss_neg = loss_dict['loss_neg'].mean()
-        
-
-        loss = loss_pos + loss_neg
-        del loss_pos, loss_neg
+        loss = sum([loss_dict[key] for key in loss_dict.keys()])
 
 
         loss.backward()
@@ -142,29 +137,24 @@ def train(args, epoch, loader, target_loader, model, optimizer, device):
 
         nn.utils.clip_grad_norm_(model.parameters(), 10)
         optimizer.step()
-
+        
+        writer.add_scalar('loss/tot', loss.item(), global_iter)
         del loss, _
 
         
-        loss_reduced = reduce_loss_dict(loss_dict)
-        loss_pos_item = loss_reduced['loss_pos'].mean().item()
-        loss_neg_item = loss_reduced['loss_neg'].mean().item()
-        total_loss = loss_pos_item + loss_neg_item
-        del loss_dict, loss_reduced
+        for key in loss_dict:
+            writer.add_scalar('loss/'+key, loss_dict[key].mean().item(), global_iter)
+        
+        
+        del loss_dict
         
         del images, targets, target_images, target_targets
 
 
-        writer.add_scalar('loss/pos', loss_pos_item, global_iter)
-        writer.add_scalar('loss/neg', loss_neg_item, global_iter)
-        writer.add_scalar('loss/tot', total_loss, global_iter)
         
-        pbar.set_description(
-            (
-                f'epoch: {epoch + 1}; pos: {loss_pos_item:.4f}; '
-                f'neg: {loss_neg_item:.4f}'
-            )
-        )
+        
+        
+        pbar.set_description(str(loss_dict))
         
         '''       
         t = torch.cuda.get_device_properties(0).total_memory
