@@ -6,6 +6,7 @@ from collections import Counter
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader, sampler
+from torchvision import models
 
 
 from tqdm import tqdm
@@ -225,7 +226,7 @@ if __name__ == '__main__':
 
 
 
-    backbone = resnet50(pretrained=False,if_include_top=False)
+    backbone = models.resnet152(pretrained=True)
     model = EigenDetect(args, backbone)
     
 
